@@ -200,6 +200,7 @@
         <option value="MGT">MGT</option>
         <option value="Theni">Theni</option>
         <option value="Dindigul">Dindigul</option>
+        <option value="admin">Admin</option>
       </select>
     </div>
     <div class="field">
@@ -552,6 +553,8 @@ function doLogin() {
 
   if (store === 'admin') {
     document.getElementById('adminNavBtn').style.display = 'flex';
+  } else {
+    document.getElementById('adminNavBtn').style.display = 'none';
   }
 
   // Load SOH from localStorage
@@ -577,6 +580,7 @@ function doLogout() {
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('loginPin').value = '';
   document.getElementById('topbarBadge').classList.remove('admin-badge');
+  document.getElementById('adminNavBtn').style.display = 'none';
 }
 
 // ═══════════════════════════════════════════════════
