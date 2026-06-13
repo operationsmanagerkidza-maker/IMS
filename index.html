@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inventory Management System</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --surface2: #eef1f8;
+    --border: #d8dde8;
+    --accent: #4f8ef7;
+    --accent2: #7c5cfc;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --text: #1c2030;
+    --text2: #6b7280;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; font-size: 14px; }
+  
+  /* ── Auth Screen ── */
+  #authScreen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  .auth-logo { font-size:28px; font-weight:800; letter-spacing:-1px; color:var(--accent); margin-bottom:6px; }
+  .auth-sub { color:var(--text2); font-size:12px; margin-bottom:32px; text-align:center; }
+  .auth-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:28px; width:100%; max-width:360px; }
+  .auth-card h2 { font-size:18px; font-weight:700; margin-bottom:20px; }
+  .field { margin-bottom:16px; }
+  .field label { display:block; font-size:12px; color:var(--text2); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+  .field input, .field select { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-size:14px; outline:none; transition:border .2s; }
+  .field input:focus, .field select:focus { border-color:var(--accent); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:11px 20px; border-radius:8px; border:none; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; }
+  .btn-primary { background:var(--accent); color:#fff; width:100%; }
+  .btn-primary:hover { background:#3b7de8; }
+  .btn-success { background:var(--success); color:#fff; }
+  .btn-success:hover { filter:brightness(1.1); }
+  .btn-danger { background:var(--danger); color:#fff; }
+  .btn-warning { background:var(--warning); color:#fff; }
+  .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-sm { padding:7px 14px; font-size:12px; }
+  .btn-full { width:100%; }
+  
+  /* ── App Shell ── */
+  #appShell { display:none; flex-direction:column; min-height:100vh; }
+  .topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .topbar-title { font-weight:700; font-size:15px; }
+  .topbar-user { display:flex; align-items:center; gap:10px; }
+  .user-badge { background:var(--accent); color:#fff; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .admin-badge { background:var(--accent2); }
+  
+  .main-content { flex:1; padding:16px; padding-bottom:80px; max-width:600px; margin:0 auto; width:100%; }
+  
+  /* ── Bottom Nav ── */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-top:1px solid var(--border); display:flex; z-index:100; }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 6px; cursor:pointer; transition:color .2s; color:var(--text2); border:none; background:none; font-size:10px; gap:4px; }
+  .nav-item.active { color:var(--accent); }
+  .nav-item svg { width:20px; height:20px; }
+  
+  /* ── Tabs / Sections ── */
+  .section { display:none; }
+  .section.active { display:block; }
+  
+  /* ── Cards ── */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
+  .card-title { font-size:13px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; }
+  
+  /* ── Tables ── */
+  .tbl-wrap { overflow-x:auto; border-radius:8px; border:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { background:var(--surface2); padding:9px 12px; text-align:left; font-weight:600; color:var(--text2); white-space:nowrap; }
+  td { padding:9px 12px; border-top:1px solid var(--border); vertical-align:middle; }
+  tr:hover td { background:rgba(79,142,247,.05); }
+  
+  /* ── Tags/Chips ── */
+  .chip { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+  .chip-blue { background:rgba(79,142,247,.15); color:var(--accent); }
+  .chip-green { background:rgba(34,197,94,.15); color:var(--success); }
+  .chip-yellow { background:rgba(245,158,11,.15); color:var(--warning); }
+  .chip-red { background:rgba(239,68,68,.15); color:var(--danger); }
+  .chip-purple { background:rgba(124,92,252,.15); color:var(--accent2); }
+  
+  /* ── Search / Input Row ── */
+  .input-row { display:flex; gap:8px; margin-bottom:12px; }
+  .input-row input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:14px; outline:none; }
+  .input-row input:focus { border-color:var(--accent); }
+  
+  /* ── PI Scan Area ── */
+  .scan-area { background:var(--surface2); border:2px dashed var(--border); border-radius:var(--radius); padding:20px; text-align:center; margin-bottom:12px; }
+  .scan-icon { font-size:36px; margin-bottom:8px; }
+  .scan-input { background:var(--bg); border:1px solid var(--accent); border-radius:8px; padding:12px 14px; color:var(--text); font-size:16px; width:100%; margin-top:12px; outline:none; text-align:center; letter-spacing:2px; }
+  
+  /* ── PI Item Row ── */
+  .pi-item { display:flex; align-items:center; gap:10px; padding:10px; background:var(--surface2); border-radius:8px; margin-bottom:6px; }
+  .pi-item-code { font-weight:700; font-size:13px; min-width:80px; }
+  .pi-item-info { flex:1; font-size:11px; color:var(--text2); }
+  .pi-item-qty { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); width:60px; text-align:center; font-size:14px; }
+  .pi-item-del { background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; padding:4px; }
+  
+  /* ── Variance Row ── */
+  .var-pos { color:var(--success); font-weight:700; }
+  .var-neg { color:var(--danger); font-weight:700; }
+  .var-zero { color:var(--text2); }
+  
+  /* ── Barcode Preview ── */
+  .barcode-grid { display:grid; grid-template-columns:repeat(auto-fill,105px); gap:6px; padding:10px; background:#fff; border-radius:8px; }
+  .barcode-label { display:flex; flex-direction:column; align-items:center; width:105px; height:60px; border:1px solid #ccc; padding:2px; overflow:hidden; background:#fff; }
+  .barcode-label .brand { font-size:7px; font-weight:800; color:#000; margin-bottom:0; font-family:Arial,sans-serif; }
+  .barcode-label .class-mrp { font-size:6px; color:#333; font-family:Arial,sans-serif; margin-bottom:1px; }
+  .barcode-label canvas, .barcode-label svg { width:100% !important; height:28px !important; }
+  .barcode-label .code { font-size:7px; color:#000; font-family:monospace; margin-top:1px; }
+  
+  /* ── Admin variance highlight ── */
+  .variance-high { border-left:4px solid var(--danger); padding-left:8px; }
+  .variance-med { border-left:4px solid var(--warning); padding-left:8px; }
+  
+  /* ── Modal ── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; align-items:center; justify-content:center; padding:16px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+  .modal h3 { font-size:16px; margin-bottom:16px; }
+  .modal-footer { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+  
+  /* ── Toast ── */
+  #toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 18px; font-size:13px; z-index:500; display:none; white-space:nowrap; }
+  
+  /* ── Divider ── */
+  .divider { border:none; border-top:1px solid var(--border); margin:12px 0; }
+  
+  /* ── Status pill ── */
+  .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px; }
+  .dot-green { background:var(--success); }
+  .dot-yellow { background:var(--warning); }
+  .dot-red { background:var(--danger); }
+  .dot-blue { background:var(--accent); }
+  
+  /* ── Print styles ── */
+  @media print {
+    body { background:#fff; }
+    #appShell, #authScreen { display:none !important; }
+    #printArea { display:block !important; }
+    .barcode-grid { display:grid; grid-template-columns:repeat(7,105px); gap:4px; }
+  }
+  #printArea { display:none; }
+  
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .section-header h2 { font-size:16px; font-weight:700; }
+  
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text2); }
+  .empty-state .empty-icon { font-size:40px; margin-bottom:10px; }
+  
+  .progress-bar-wrap { background:var(--surface2); border-radius:20px; height:8px; margin-top:6px; overflow:hidden; }
+  .progress-bar { height:100%; border-radius:20px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .4s; }
+  
+  .store-filter-row { display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px; }
+  .store-pill { flex-shrink:0; padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-size:12px; cursor:pointer; transition:all .2s; }
+  .store-pill.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  
+  .pi-week-badge { background:rgba(79,142,247,.1); border:1px solid rgba(79,142,247,.3); color:var(--accent); font-size:11px; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:5px; }
+  
+  .recount-photo { width:100%; border-radius:8px; margin-top:8px; max-height:200px; object-fit:contain; background:var(--bg); }
+  
+  .admin-stat { text-align:center; }
+  .admin-stat .val { font-size:24px; font-weight:800; color:var(--accent); }
+  .admin-stat .lbl { font-size:11px; color:var(--text2); margin-top:2px; }
+  
+  .stats-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; }
+  
+  .approval-item { display:flex; align-items:center; justify-content:space-between; padding:10px; background:var(--surface2); border-radius:8px; margin-bottom:6px; gap:8px; }
+  
+  .history-item { padding:12px; background:var(--surface2); border-radius:8px; margin-bottom:6px; cursor:pointer; }
+  .history-item:hover { border:1px solid var(--accent); }
+  .history-date { font-size:11px; color:var(--text2); margin-top:4px; }
+  
+  textarea { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px; color:var(--text); font-size:13px; resize:vertical; width:100%; outline:none; }
+  textarea:focus { border-color:var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ══════════ AUTH SCREEN ══════════ -->
+<div id="authScreen">
+  <div class="auth-logo">📦 IMS</div>
+  <div class="auth-sub">Inventory Management System</div>
+  <div class="auth-card">
+    <h2>Sign In</h2>
+    <div class="field">
+      <label>Store / User</label>
+      <select id="loginStore">
+        <option value="">— Select Store —</option>
+        <option value="Kattur">Kattur</option>
+        <option value="Cumbum">Cumbum</option>
+        <option value="MGT">MGT</option>
+        <option value="Theni">Theni</option>
+        <option value="Dindigul">Dindigul</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>PIN</label>
+      <input type="password" id="loginPin" placeholder="Enter PIN" maxlength="6">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign In →</button>
+    <p style="font-size:11px;color:var(--accent);margin-top:14px;text-align:center;cursor:pointer;text-decoration:underline" onclick="openModal('forgotPinModal')">
+      Forgot Admin PIN?
+    </p>
+  </div>
+</div>
+
+<!-- Forgot PIN Modal -->
+<div class="modal-overlay" id="forgotPinModal">
+  <div class="modal" style="max-width:360px">
+    <h3>🔑 Reset Admin PIN</h3>
+    <div class="field">
+      <label>Recovery Code</label>
+      <input type="text" id="forgotRecoveryCode" placeholder="Enter recovery code">
+    </div>
+    <div class="field">
+      <label>New Admin PIN</label>
+      <input type="text" id="forgotNewPin" placeholder="New PIN (4-6 digits)" maxlength="6">
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px">
+      Contact your system owner for the recovery code.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('forgotPinModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="resetAdminPin()">Reset PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ APP SHELL ══════════ -->
+<div id="appShell">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-title">📦 IMS</div>
+    <div class="topbar-user">
+      <span id="topbarStore" style="font-size:12px;color:var(--text2)"></span>
+      <div id="topbarBadge" class="user-badge"></div>
+      <button class="btn btn-sm btn-secondary" onclick="doLogout()" style="padding:5px 10px;font-size:11px;">Out</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- ── SECTION: SOH (Stock on Hand) ── -->
+    <div id="sec-soh" class="section active">
+      <div class="section-header">
+        <h2>📊 Stock on Hand</h2>
+        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('sohUpload').click()">⬆ Upload CSV</button>
+        <input type="file" id="sohUpload" accept=".csv" style="display:none" onchange="handleSOHUpload(event)">
+      </div>
+      <div class="store-filter-row" id="sohStoreFilter"></div>
+      <div class="input-row">
+        <input type="text" id="sohSearch" placeholder="🔍 Search by product code, class, brand..." oninput="renderSOH()">
+      </div>
+      <div id="sohContent">
+        <div class="empty-state"><div class="empty-icon">📋</div><p>Upload SOH CSV to view stock</p></div>
+      </div>
+    </div>
+
+    <!-- ── SECTION: PHYSICAL INVENTORY ── -->
+    <div id="sec-pi" class="section">
+      <div class="section-header">
+        <h2>🔍 Physical Inventory</h2>
+        <span id="piWeekBadge" class="pi-week-badge">📅 Week —</span>
+      </div>
+
+      <!-- PI Assignment Banner (admin sets) -->
+      <div id="piAssignBanner" class="card" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px">📌</span>
+          <div>
+            <div style="font-weight:700" id="piAssignTitle">PI Assigned</div>
+            <div style="font-size:11px;color:var(--text2)" id="piAssignDetail"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scan + Add -->
+      <div class="card">
+        <div class="card-title">Scan / Enter Product</div>
+        <div class="scan-area">
+          <div class="scan-icon">📷</div>
+          <div style="font-size:12px;color:var(--text2)">Scan barcode or type manually</div>
+          <input class="scan-input" id="piBarcode" type="text" placeholder="Product Code" autocomplete="off"
+            onkeydown="if(event.key==='Enter'){lookupAndAddPI()}"
+            inputmode="numeric">
+        </div>
+        <div class="field" id="piLookupResult" style="display:none">
+          <div id="piLookupInfo" style="font-size:12px;color:var(--text2);margin-bottom:6px;padding:8px;background:var(--surface2);border-radius:8px;"></div>
+        </div>
+        <div class="input-row">
+          <input type="number" id="piQty" placeholder="Qty" min="0" style="max-width:100px">
+          <button class="btn btn-primary" onclick="addPIItem()" style="flex:1">+ Add</button>
+        </div>
+      </div>
+
+      <!-- PI List -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="card-title" style="margin-bottom:0">Scanned Items (<span id="piCount">0</span>)</div>
+          <button class="btn btn-sm btn-secondary" onclick="clearPIList()">Clear</button>
+        </div>
+        <div id="piItemList"><div class="empty-state" style="padding:20px"><p>No items scanned yet</p></div></div>
+        <hr class="divider">
+        <button class="btn btn-success btn-full" onclick="submitPI()" id="submitPIBtn" disabled>✅ Submit Physical Inventory</button>
+      </div>
+
+      <!-- Recount Section -->
+      <div class="card" id="recountCard" style="display:none">
+        <div class="card-title">🔄 Recount</div>
+        <div id="recountContent"></div>
+      </div>
+    </div>
+
+    <!-- ── SECTION: BARCODE GEN ── -->
+    <div id="sec-barcode" class="section">
+      <div class="section-header"><h2>🏷 Barcode Generator</h2></div>
+      <div class="card">
+        <div class="card-title">Generate Labels</div>
+        <div class="field">
+          <label>Product Code(s)</label>
+          <textarea id="bcCodes" rows="4" placeholder="Enter product codes, one per line (e.g.&#10;1234&#10;5678&#10;9012)"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1" onclick="generateBarcodes()">🔧 Generate</button>
+          <button class="btn btn-secondary" onclick="printBarcodes()">🖨 Print</button>
+        </div>
+      </div>
+      <div id="barcodePreviewWrap" style="display:none">
+        <div class="card">
+          <div class="card-title">Preview (<span id="bcCount">0</span> labels)</div>
+          <div id="barcodePreview" class="barcode-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION: HISTORY ── -->
+    <div id="sec-history" class="section">
+      <div class="section-header"><h2>📁 PI History</h2></div>
+      <div class="store-filter-row" id="historyStoreFilter"></div>
+      <div id="historyList"><div class="empty-state"><div class="empty-icon">📂</div><p>No PI history yet</p></div></div>
+    </div>
+
+    <!-- ── SECTION: ADMIN ── -->
+    <div id="sec-admin" class="section">
+      <div class="section-header"><h2>⚙️ Admin Panel</h2></div>
+
+      <!-- Quick Stats -->
+      <div class="stats-row">
+        <div class="card admin-stat" style="padding:12px">
+          <div class="val" id="adminStatStores">5</div>
+          <div class="lbl">Stores</div>
+        </div>
+        <div class="card admin-stat" style="padding:12px">
+          <div class="val" id="adminStatPI">0</div>
+          <div class="lbl">PI This Week</div>
+        </div>
+        <div class="card admin-stat" style="padding:12px">
+          <div class="val" id="adminStatVariance">—</div>
+          <div class="lbl">Avg Variance</div>
+        </div>
+      </div>
+
+      <!-- Variance Highlights -->
+      <div class="card">
+        <div class="card-title">⚠️ Major Variance (This Week)</div>
+        <div id="adminVarianceList"><div style="color:var(--text2);font-size:12px">No data yet</div></div>
+      </div>
+
+      <!-- Assign PI -->
+      <div class="card">
+        <div class="card-title">📌 Assign Weekly PI</div>
+        <div class="field">
+          <label>Week</label>
+          <input type="week" id="adminPIWeek" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;width:100%;outline:none;">
+        </div>
+        <div class="field">
+          <label>Assign to Stores</label>
+          <div id="adminStoreCheckboxes" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="assignPI()">📌 Assign PI</button>
+      </div>
+
+      <!-- Recount Approvals -->
+      <div class="card">
+        <div class="card-title">📷 Recount Approvals</div>
+        <div id="recountApprovalList"><div style="color:var(--text2);font-size:12px">No pending approvals</div></div>
+      </div>
+
+      <!-- SOH Upload -->
+      <div class="card">
+        <div class="card-title">📋 SOH Data</div>
+        <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">
+          Upload CSV with columns: <code style="background:var(--bg);padding:2px 5px;border-radius:4px;">StoreName, Concatinate, Department, Class, Brand, MRP, SOH, ProductCode</code>
+        </div>
+        <button class="btn btn-secondary btn-full" onclick="document.getElementById('adminSOHUpload').click()">⬆ Upload SOH CSV</button>
+        <input type="file" id="adminSOHUpload" accept=".csv" style="display:none" onchange="handleSOHUpload(event)">
+        <div id="sohUploadStatus" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
+      </div>
+
+      <!-- PIN Management -->
+      <div class="card">
+        <div class="card-title">🔐 Store PINs</div>
+        <div id="pinManageList"></div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" onclick="switchSection('soh',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      SOH
+    </button>
+    <button class="nav-item" onclick="switchSection('pi',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      PI
+    </button>
+    <button class="nav-item" onclick="switchSection('barcode',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v14M7 5v14M13 5v14M17 5v14M21 5v14M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
+      Barcode
+    </button>
+    <button class="nav-item" onclick="switchSection('history',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      History
+    </button>
+    <button class="nav-item" id="adminNavBtn" onclick="switchSection('admin',this)" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Admin
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════ MODALS ══════════ -->
+<!-- PI Result Modal -->
+<div class="modal-overlay" id="piResultModal">
+  <div class="modal">
+    <h3>📊 PI Submission Result</h3>
+    <div id="piResultContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('piResultModal')">Close</button>
+      <button class="btn btn-primary" onclick="exportPIResult()">⬇ Export</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Detail Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal">
+    <h3 id="historyModalTitle">PI History</h3>
+    <div id="historyModalContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('historyModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recount Photo Modal -->
+<div class="modal-overlay" id="recountPhotoModal">
+  <div class="modal">
+    <h3>📷 Recount Photo Proof</h3>
+    <div id="recountPhotoContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('recountPhotoModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Area -->
+<div id="printArea"></div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//   FIREBASE CONFIG — Replace with your project config
+// ═══════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: localStorage.getItem('ims_fb_apiKey') || "AIzaSyBQJXTeqPCGejm5KysDj4ez4AIoJpz8t8A",
+  authDomain: localStorage.getItem('ims_fb_authDomain') || "ims---app.firebaseapp.com",
+  databaseURL: localStorage.getItem('ims_fb_databaseURL') || "https://ims---app-default-rtdb.asia-southeast1.firebasedatabase.app/:null",
+  projectId: localStorage.getItem('ims_fb_projectId') || "ims---app",
+  storageBucket: localStorage.getItem('ims_fb_storageBucket') || "ims---app.firebasestorage.app",
+  messagingSenderId: localStorage.getItem('ims_fb_messagingSenderId') || "489115122180",
+  appId: localStorage.getItem('ims_fb_appId') || "1:489115122180:web:e1a7b9fde812e4bc90d351"
+};
+
+let db = null;
+let firebaseOK = false;
+
+function initFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    firebaseOK = true;
+  } catch(e) { firebaseOK = false; }
+}
+initFirebase();
+
+// ═══════════════════════════════════════════════════
+//   APP STATE
+// ═══════════════════════════════════════════════════
+const STORES = ['Kattur','Cumbum','MGT','Theni','Dindigul'];
+const DEFAULT_PINS = { Kattur:'1234', Cumbum:'1234', MGT:'1234', Theni:'1234', Dindigul:'1234', admin:'9999' };
+
+let appState = {
+  user: null,       // { store, role }
+  sohData: [],      // flat array of all SOH rows
+  sohMap: {},       // concat key -> row
+  piItems: [],      // current scan session [{code, name, dept, cls, brand, mrp, physQty}]
+  piWeek: '',
+  piAssignment: {}, // week -> [stores]
+  activeSohStore: 'ALL',
+  currentPIResult: null,
+};
+
+// LocalStorage helpers
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+function lsSet(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+
+// ═══════════════════════════════════════════════════
+//   AUTH
+// ═══════════════════════════════════════════════════
+function doLogin() {
+  const store = document.getElementById('loginStore').value;
+  const pin   = document.getElementById('loginPin').value;
+  if (!store) { showToast('Please select a store'); return; }
+
+  const pins = lsGet('ims_pins') || DEFAULT_PINS;
+  const correct = pins[store] || DEFAULT_PINS[store];
+  if (pin !== correct) { showToast('❌ Incorrect PIN'); return; }
+
+  appState.user = { store, role: store === 'admin' ? 'admin' : 'store' };
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+
+  const initials = store === 'admin' ? 'AD' : store.slice(0,2).toUpperCase();
+  document.getElementById('topbarStore').textContent = store;
+  document.getElementById('topbarBadge').textContent = initials;
+  if (store === 'admin') document.getElementById('topbarBadge').classList.add('admin-badge');
+
+  if (store === 'admin') {
+    document.getElementById('adminNavBtn').style.display = 'flex';
+  }
+
+  // Load SOH from localStorage
+  const stored = lsGet('ims_soh');
+  if (stored && stored.length) {
+    appState.sohData = stored;
+    buildSOHMap();
+  }
+
+  loadPIAssignments();
+  initSOHFilters();
+  renderSOH();
+  renderHistory();
+  if (store === 'admin') { renderAdminPanel(); }
+  renderPINs();
+  setCurrentWeek();
+}
+
+function doLogout() {
+  appState.user = null;
+  appState.piItems = [];
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('loginPin').value = '';
+  document.getElementById('topbarBadge').classList.remove('admin-badge');
+}
+
+// ═══════════════════════════════════════════════════
+//   NAVIGATION
+// ═══════════════════════════════════════════════════
+function switchSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if (name==='pi') initPISection();
+  if (name==='admin') renderAdminPanel();
+  if (name==='history') renderHistory();
+}
+
+// ═══════════════════════════════════════════════════
+//   SOH — Upload & Render
+// ═══════════════════════════════════════════════════
+function handleSOHUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      const rows = results.data;
+      appState.sohData = rows;
+      lsSet('ims_soh', rows);
+      buildSOHMap();
+      initSOHFilters();
+      renderSOH();
+      showToast(`✅ Loaded ${rows.length} SOH records`);
+      document.getElementById('sohUploadStatus').textContent = `${rows.length} records loaded from "${file.name}"`;
+      // Push to Firebase if available
+      if (firebaseOK) {
+        db.ref('soh').set(rows).catch(()=>{});
+      }
+    }
+  });
+  event.target.value='';
+}
+
+function buildSOHMap() {
+  appState.sohMap = {};
+  appState.sohData.forEach(r => {
+    const key = (r.Concatinate||'').trim().toUpperCase();
+    const code = (r.ProductCode||'').trim().toUpperCase();
+    if(key) appState.sohMap[key] = r;
+    if(code && !appState.sohMap[code]) appState.sohMap[code] = r;
+  });
+}
+
+function initSOHFilters() {
+  const wrap = document.getElementById('sohStoreFilter');
+  wrap.innerHTML = '';
+  const all = document.createElement('span');
+  all.className = 'store-pill active';
+  all.textContent = 'All Stores';
+  all.onclick = () => { appState.activeSohStore='ALL'; document.querySelectorAll('#sohStoreFilter .store-pill').forEach(p=>p.classList.remove('active')); all.classList.add('active'); renderSOH(); };
+  wrap.appendChild(all);
+
+  const stores = [...new Set(appState.sohData.map(r=>(r.StoreName||'').trim()).filter(Boolean))];
+  stores.forEach(s => {
+    const p = document.createElement('span');
+    p.className='store-pill';
+    p.textContent=s;
+    p.onclick=()=>{ appState.activeSohStore=s; document.querySelectorAll('#sohStoreFilter .store-pill').forEach(x=>x.classList.remove('active')); p.classList.add('active'); renderSOH(); };
+    wrap.appendChild(p);
+  });
+}
+
+function renderSOH() {
+  const q = (document.getElementById('sohSearch')||{}).value?.toLowerCase()||'';
+  let data = appState.sohData;
+
+  if (appState.user?.role !== 'admin') {
+    // Store users only see their store
+    data = data.filter(r => (r.StoreName||'').trim() === appState.user?.store);
+  } else if (appState.activeSohStore !== 'ALL') {
+    data = data.filter(r => (r.StoreName||'').trim() === appState.activeSohStore);
+  }
+
+  if (q) data = data.filter(r =>
+    (r.ProductCode||'').toLowerCase().includes(q) ||
+    (r.Brand||'').toLowerCase().includes(q) ||
+    (r.Class||'').toLowerCase().includes(q) ||
+    (r.Department||'').toLowerCase().includes(q)
+  );
+
+  const el = document.getElementById('sohContent');
+  if (!data.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No records found</p></div>';
+    return;
+  }
+  el.innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>Store</th><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>SOH</th><th>MRP</th></tr></thead>
+    <tbody>${data.slice(0,500).map(r=>`<tr>
+      <td>${r.StoreName||''}</td>
+      <td><b>${r.ProductCode||''}</b></td>
+      <td>${r.Department||''}</td>
+      <td>${r.Class||''}</td>
+      <td>${r.Brand||''}</td>
+      <td>${r.SOH||r.SystemQty||r['System Qty']||'0'}</td>
+      <td>₹${r.MRP||'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>
+  <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:right">Showing ${Math.min(500,data.length)} of ${data.length} records</div>`;
+}
+
+// ═══════════════════════════════════════════════════
+//   PI SECTION
+// ═══════════════════════════════════════════════════
+function setCurrentWeek() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const d = new Date(Date.UTC(y,0,4));
+  const dayNum = Math.floor((now - d) / 86400000);
+  const week = Math.ceil((dayNum + d.getUTCDay() + 1) / 7);
+  appState.piWeek = `${y}-W${String(week).padStart(2,'0')}`;
+  document.getElementById('piWeekBadge').textContent = `📅 ${appState.piWeek}`;
+}
+
+function loadPIAssignments() {
+  const stored = lsGet('ims_pi_assignments') || {};
+  appState.piAssignment = stored;
+  updatePIAssignBanner();
+  if (firebaseOK) {
+    db.ref('pi_assignments').on('value', snap => {
+      const val = snap.val();
+      if (val) { appState.piAssignment = val; lsSet('ims_pi_assignments', val); updatePIAssignBanner(); }
+    });
+  }
+}
+
+function updatePIAssignBanner() {
+  const banner = document.getElementById('piAssignBanner');
+  const assignment = appState.piAssignment[appState.piWeek];
+  if (assignment && appState.user) {
+    const stores = assignment.stores || [];
+    if (appState.user.role === 'admin' || stores.includes(appState.user.store)) {
+      banner.style.display = 'block';
+      document.getElementById('piAssignTitle').textContent = `PI Assigned — ${appState.piWeek}`;
+      document.getElementById('piAssignDetail').textContent = `Stores: ${stores.join(', ')}`;
+    }
+  }
+}
+
+function initPISection() {
+  updatePIAssignBanner();
+  renderPIItems();
+  checkRecountAvailability();
+}
+
+function lookupAndAddPI() {
+  const code = document.getElementById('piBarcode').value.trim().toUpperCase();
+  if (!code) return;
+  const store = appState.user?.store || '';
+  const concatKey = (store + code).toUpperCase();
+  const row = appState.sohMap[concatKey] || appState.sohMap[code] || null;
+  const infoEl = document.getElementById('piLookupInfo');
+  const resultEl = document.getElementById('piLookupResult');
+
+  if (row) {
+    const sysQty = parseFloat(row.SOH || row.SystemQty || row['System Qty'] || 0);
+    infoEl.innerHTML = `<b>${row.ProductCode}</b> · ${row.Department} · ${row.Class} · ${row.Brand} · MRP ₹${row.MRP} · SOH Qty: <b>${sysQty}</b>`;
+    resultEl.style.display = 'block';
+  } else {
+    infoEl.innerHTML = `<span style="color:var(--warning)">⚠ Code not found in SOH — will still be captured</span>`;
+    resultEl.style.display = 'block';
+  }
+  document.getElementById('piQty').focus();
+}
+
+function addPIItem() {
+  const code = document.getElementById('piBarcode').value.trim().toUpperCase();
+  const qty = parseInt(document.getElementById('piQty').value);
+  if (!code) { showToast('Enter a product code'); return; }
+  if (isNaN(qty) || qty < 0) { showToast('Enter valid quantity'); return; }
+
+  const store = appState.user?.store || '';
+  const concatKey = (store + code).toUpperCase();
+  const row = appState.sohMap[concatKey] || appState.sohMap[code] || {};
+
+  // Check if already exists — update qty
+  const sysQty = parseFloat(row.SOH || row.SystemQty || row['System Qty'] || 0);
+  const mrp = row.MRP || '—';
+  const existing = appState.piItems.find(i => i.code === code);
+  if (existing) {
+    existing.physQty = qty;
+    showToast(`✏️ Updated ${code}: Qty ${qty}`);
+  } else {
+    appState.piItems.push({
+      code,
+      dept: row.Department || '—',
+      cls: row.Class || '—',
+      brand: row.Brand || '—',
+      mrp,
+      sysQty,
+      physQty: qty
+    });
+    showToast(`✅ Added ${code}`);
+  }
+
+  document.getElementById('piBarcode').value = '';
+  document.getElementById('piQty').value = '';
+  document.getElementById('piLookupResult').style.display = 'none';
+  document.getElementById('piBarcode').focus();
+  renderPIItems();
+}
+
+function renderPIItems() {
+  const el = document.getElementById('piItemList');
+  const count = appState.piItems.length;
+  document.getElementById('piCount').textContent = count;
+  document.getElementById('submitPIBtn').disabled = count === 0;
+
+  if (!count) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No items scanned yet</p></div>';
+    return;
+  }
+  el.innerHTML = appState.piItems.map((item,i)=>{
+    const sysQty = item.sysQty||0;
+    const variance = item.physQty - sysQty;
+    const mrpVal = parseFloat(item.mrp)||0;
+    const mrpVariance = variance * mrpVal;
+    const vCls = variance>0?'var-pos':variance<0?'var-neg':'var-zero';
+    return `
+    <div class="pi-item">
+      <div class="pi-item-code">${item.code}</div>
+      <div class="pi-item-info">${item.dept} · ${item.cls} · ${item.brand} · MRP ₹${item.mrp}<br>
+        SOH: ${sysQty} · Var: <span class="${vCls}">${variance>0?'+':''}${variance}</span> · MRP Var: <span class="${vCls}">₹${mrpVariance.toFixed(2)}</span>
+      </div>
+      <input class="pi-item-qty" type="number" value="${item.physQty}" min="0"
+        onchange="updatePIQty(${i},this.value)">
+      <button class="pi-item-del" onclick="removePIItem(${i})">✕</button>
+    </div>`;}).join('');
+}
+
+function updatePIQty(i, val) {
+  appState.piItems[i].physQty = parseInt(val)||0;
+  renderPIItems();
+}
+
+function removePIItem(i) {
+  appState.piItems.splice(i,1);
+  renderPIItems();
+}
+
+function clearPIList() {
+  if (!confirm('Clear all scanned items?')) return;
+  appState.piItems = [];
+  renderPIItems();
+}
+
+function submitPI() {
+  if (!appState.piItems.length) return;
+  if (!confirm('Submit Physical Inventory? This cannot be undone.')) return;
+
+  const store = appState.user.store;
+  const week = appState.piWeek;
+  const ts = new Date().toISOString();
+
+  // Build result by comparing with SOH
+  const sohForStore = appState.sohData.filter(r => (r.StoreName||'').trim() === store);
+  const sohByCode = {};
+  sohForStore.forEach(r => { sohByCode[(r.ProductCode||'').toUpperCase()] = r; });
+
+  const result = appState.piItems.map(item => {
+    const soh = sohByCode[item.code] || {};
+    const sysQty = item.sysQty != null ? item.sysQty : parseFloat(soh.SOH || soh.SystemQty || soh['System Qty'] || 0);
+    const physQty = item.physQty;
+    const variance = physQty - sysQty;
+    const mrp = item.mrp || soh.MRP || 0;
+    const mrpVariance = variance * (parseFloat(mrp)||0);
+    return { code: item.code, dept: item.dept, cls: item.cls, brand: item.brand, mrp,
+      physQty, sysQty, variance, mrpVariance };
+  });
+
+  const submission = {
+    store, week, ts, items: appState.piItems, result,
+    status: 'submitted',
+    recountStatus: 'none' // none | r1_pending | r1_done | r2_approved | r2_done
+  };
+
+  // Save to localStorage
+  const history = lsGet('ims_pi_history') || [];
+  const key = `${store}_${week}_${Date.now()}`;
+  submission.id = key;
+  history.unshift(submission);
+  lsSet('ims_pi_history', history);
+
+  // Push to Firebase
+  if (firebaseOK) {
+    db.ref(`pi_history/${key}`).set(submission).catch(()=>{});
+  }
+
+  appState.currentPIResult = submission;
+  appState.piItems = [];
+  renderPIItems();
+  showPIResult(submission);
+  checkRecountAvailability();
+  renderHistory();
+}
+
+function showPIResult(submission) {
+  const variantRows = submission.result.filter(r => r.variance !== 0);
+  const zeroRows = submission.result.filter(r => r.variance === 0);
+  const totalVar = submission.result.reduce((s,r)=>s+Math.abs(r.variance),0);
+
+  const html = `
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <div style="flex:1;text-align:center;background:var(--surface2);border-radius:8px;padding:12px">
+        <div style="font-size:22px;font-weight:800;color:var(--accent)">${submission.result.length}</div>
+        <div style="font-size:11px;color:var(--text2)">Total Items</div>
+      </div>
+      <div style="flex:1;text-align:center;background:var(--surface2);border-radius:8px;padding:12px">
+        <div style="font-size:22px;font-weight:800;color:var(--danger)">${variantRows.length}</div>
+        <div style="font-size:11px;color:var(--text2)">Variance Items</div>
+      </div>
+      <div style="flex:1;text-align:center;background:var(--surface2);border-radius:8px;padding:12px">
+        <div style="font-size:22px;font-weight:800;color:var(--warning)">${totalVar}</div>
+        <div style="font-size:11px;color:var(--text2)">Total Variance</div>
+      </div>
+    </div>
+    ${variantRows.length ? `
+    <div class="card-title">⚠️ Items with Variance</div>
+    <div class="tbl-wrap" style="margin-bottom:12px"><table>
+      <thead><tr><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>MRP</th><th>Sys</th><th>Phys</th><th>Var</th><th>MRP Var</th></tr></thead>
+      <tbody>${variantRows.map(r=>`<tr>
+        <td><b>${r.code}</b></td><td>${r.dept}</td><td>${r.cls}</td><td>${r.brand}</td>
+        <td>₹${r.mrp}</td><td>${r.sysQty}</td><td>${r.physQty}</td>
+        <td class="${r.variance>0?'var-pos':r.variance<0?'var-neg':'var-zero'}">${r.variance>0?'+':''}${r.variance}</td>
+        <td class="${r.mrpVariance>0?'var-pos':r.mrpVariance<0?'var-neg':'var-zero'}">₹${r.mrpVariance.toFixed(2)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : ''}
+    <div style="font-size:11px;color:var(--success)">✅ ${zeroRows.length} items match system stock</div>`;
+
+  document.getElementById('piResultContent').innerHTML = html;
+  openModal('piResultModal');
+}
+
+function exportPIResult() {
+  if (!appState.currentPIResult) return;
+  const rows = [['Code','Dept','Class','Brand','MRP','SysQty','PhysQty','Variance','MRPVariance']];
+  appState.currentPIResult.result.forEach(r => {
+    rows.push([r.code,r.dept,r.cls,r.brand,r.mrp,r.sysQty,r.physQty,r.variance,r.mrpVariance.toFixed(2)]);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url;
+  a.download=`PI_${appState.currentPIResult.store}_${appState.currentPIResult.week}.csv`;
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════
+//   RECOUNT
+// ═══════════════════════════════════════════════════
+function checkRecountAvailability() {
+  const store = appState.user?.store;
+  if (!store || appState.user.role === 'admin') return;
+
+  const history = lsGet('ims_pi_history') || [];
+  const latest = history.find(h => h.store === store && h.week === appState.piWeek);
+
+  const card = document.getElementById('recountCard');
+  const content = document.getElementById('recountContent');
+  if (!latest) { card.style.display='none'; return; }
+
+  card.style.display = 'block';
+
+  const r1Done = latest.recountStatus === 'r1_done' || latest.recountStatus === 'r2_approved' || latest.recountStatus === 'r2_done';
+  const r2Approved = latest.recountStatus === 'r2_approved';
+  const r2Done = latest.recountStatus === 'r2_done';
+
+  let html = '';
+
+  // Recount 1
+  if (latest.recountStatus === 'none') {
+    html += `
+      <div style="margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px">1st Recount <span class="chip chip-yellow">Available</span></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Capture physical count with photo proof per product code</div>
+        <div id="r1Items"></div>
+        <button class="btn btn-warning btn-sm btn-full" onclick="triggerRecount1('${latest.id}')">📷 Start Recount 1</button>
+      </div>`;
+  } else if (latest.recountStatus === 'r1_done') {
+    html += `<div class="chip chip-green" style="margin-bottom:10px">✅ Recount 1 Submitted — Awaiting Admin for Recount 2</div>`;
+  } else if (r2Approved) {
+    html += `
+      <div style="margin-bottom:12px">
+        <div class="chip chip-green" style="margin-bottom:8px">✅ Recount 1 Done</div>
+        <div style="font-weight:600;margin-bottom:6px">2nd Recount <span class="chip chip-blue">Admin Approved</span></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Admin has approved a second recount</div>
+        <button class="btn btn-primary btn-sm btn-full" onclick="triggerRecount2('${latest.id}')">📷 Start Recount 2</button>
+      </div>`;
+  } else if (r2Done) {
+    html += `<div class="chip chip-green">✅ Both Recounts Completed</div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function triggerRecount1(piId) {
+  // Show camera access for product-code-wise photos
+  const html = `
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Take a photo for each product code to prove physical count</div>
+    <div id="r1PhotoList"></div>
+    <div style="margin-top:10px">
+      <input type="text" id="r1Code" placeholder="Product Code" class="scan-input" style="margin-bottom:8px">
+      <input type="file" id="r1Camera" accept="image/*" capture="environment" style="display:none" onchange="captureR1Photo()">
+      <button class="btn btn-secondary btn-full" onclick="document.getElementById('r1Camera').click()">📷 Capture Photo</button>
+    </div>
+    <button class="btn btn-success btn-full" style="margin-top:10px" onclick="submitRecount1('${piId}')">✅ Submit Recount 1</button>`;
+  document.getElementById('recountContent').innerHTML = html;
+  window._r1Photos = {};
+  window._r1CurrentPiId = piId;
+}
+
+function captureR1Photo() {
+  const code = document.getElementById('r1Code').value.trim().toUpperCase();
+  if (!code) { showToast('Enter product code first'); return; }
+  const file = document.getElementById('r1Camera').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._r1Photos[code] = e.target.result;
+    const list = document.getElementById('r1PhotoList');
+    list.innerHTML = Object.entries(window._r1Photos).map(([c,d])=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;background:var(--bg);padding:8px;border-radius:8px">
+        <img src="${d}" style="width:50px;height:50px;object-fit:cover;border-radius:4px">
+        <span style="font-weight:600;font-size:12px">${c}</span>
+        <span class="chip chip-green" style="margin-left:auto">✓</span>
+      </div>`).join('');
+    document.getElementById('r1Code').value = '';
+    showToast(`✅ Photo captured for ${code}`);
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitRecount1(piId) {
+  if (!Object.keys(window._r1Photos||{}).length) { showToast('Capture at least one photo'); return; }
+  const history = lsGet('ims_pi_history') || [];
+  const idx = history.findIndex(h => h.id === piId);
+  if (idx < 0) return;
+  history[idx].recountStatus = 'r1_done';
+  history[idx].r1Photos = window._r1Photos;
+  history[idx].r1Timestamp = new Date().toISOString();
+  lsSet('ims_pi_history', history);
+  if (firebaseOK) db.ref(`pi_history/${piId}`).update({ recountStatus:'r1_done', r1Photos:window._r1Photos, r1Timestamp: history[idx].r1Timestamp }).catch(()=>{});
+  showToast('✅ Recount 1 submitted');
+  checkRecountAvailability();
+}
+
+function triggerRecount2(piId) {
+  const html = `
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Admin-approved second recount with photo proof</div>
+    <div id="r2PhotoList"></div>
+    <div style="margin-top:10px">
+      <input type="text" id="r2Code" placeholder="Product Code" class="scan-input" style="margin-bottom:8px">
+      <input type="file" id="r2Camera" accept="image/*" capture="environment" style="display:none" onchange="captureR2Photo()">
+      <button class="btn btn-secondary btn-full" onclick="document.getElementById('r2Camera').click()">📷 Capture Photo</button>
+    </div>
+    <button class="btn btn-success btn-full" style="margin-top:10px" onclick="submitRecount2('${piId}')">✅ Submit Recount 2</button>`;
+  document.getElementById('recountContent').innerHTML = html;
+  window._r2Photos = {};
+}
+
+function captureR2Photo() {
+  const code = document.getElementById('r2Code').value.trim().toUpperCase();
+  if (!code) { showToast('Enter product code first'); return; }
+  const file = document.getElementById('r2Camera').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._r2Photos[code] = e.target.result;
+    const list = document.getElementById('r2PhotoList');
+    list.innerHTML = Object.entries(window._r2Photos).map(([c,d])=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;background:var(--bg);padding:8px;border-radius:8px">
+        <img src="${d}" style="width:50px;height:50px;object-fit:cover;border-radius:4px">
+        <span style="font-weight:600;font-size:12px">${c}</span>
+        <span class="chip chip-green" style="margin-left:auto">✓</span>
+      </div>`).join('');
+    document.getElementById('r2Code').value = '';
+    showToast(`✅ Photo captured for ${code}`);
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitRecount2(piId) {
+  if (!Object.keys(window._r2Photos||{}).length) { showToast('Capture at least one photo'); return; }
+  const history = lsGet('ims_pi_history') || [];
+  const idx = history.findIndex(h => h.id === piId);
+  if (idx < 0) return;
+  history[idx].recountStatus = 'r2_done';
+  history[idx].r2Photos = window._r2Photos;
+  history[idx].r2Timestamp = new Date().toISOString();
+  lsSet('ims_pi_history', history);
+  if (firebaseOK) db.ref(`pi_history/${piId}`).update({ recountStatus:'r2_done', r2Photos:window._r2Photos, r2Timestamp: history[idx].r2Timestamp }).catch(()=>{});
+  showToast('✅ Recount 2 submitted');
+  checkRecountAvailability();
+}
+
+// ═══════════════════════════════════════════════════
+//   BARCODE GENERATOR
+// ═══════════════════════════════════════════════════
+function generateBarcodes() {
+  const raw = document.getElementById('bcCodes').value.trim();
+  if (!raw) { showToast('Enter at least one product code'); return; }
+  const codes = raw.split('\n').map(c=>c.trim()).filter(Boolean);
+
+  const grid = document.getElementById('barcodePreview');
+  grid.innerHTML = '';
+  document.getElementById('bcCount').textContent = codes.length;
+
+  codes.forEach(code => {
+    const row = appState.sohMap[code.toUpperCase()] || {};
+    const label = document.createElement('div');
+    label.className = 'barcode-label';
+
+    const brandDiv = document.createElement('div');
+    brandDiv.className = 'brand';
+    brandDiv.textContent = 'KIDZA';
+
+    const clsDiv = document.createElement('div');
+    clsDiv.className = 'class-mrp';
+    const cls = row.Class || '';
+    const mrp = row.MRP ? `₹${row.MRP}` : '';
+    clsDiv.textContent = [cls, mrp].filter(Boolean).join(' · ') || code;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('id','bc_'+code);
+
+    const codeDiv = document.createElement('div');
+    codeDiv.className = 'code';
+    codeDiv.textContent = code;
+
+    label.appendChild(brandDiv);
+    label.appendChild(clsDiv);
+    label.appendChild(svg);
+    label.appendChild(codeDiv);
+    grid.appendChild(label);
+
+    try {
+      JsBarcode(svg, code, {
+        format: 'CODE128',
+        width: 1.2,
+        height: 28,
+        displayValue: false,
+        margin: 1,
+        background: '#ffffff',
+        lineColor: '#000000'
+      });
+    } catch(e) { codeDiv.textContent = '⚠ '+code; }
+  });
+
+  document.getElementById('barcodePreviewWrap').style.display='block';
+}
+
+function printBarcodes() {
+  const preview = document.getElementById('barcodePreview');
+  if (!preview.children.length) { showToast('Generate barcodes first'); return; }
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = `<div style="padding:10px">${preview.outerHTML}</div>`;
+  printArea.style.display = 'block';
+  document.getElementById('appShell').style.display = 'none';
+  window.print();
+  document.getElementById('appShell').style.display = 'flex';
+  printArea.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════
+//   HISTORY
+// ═══════════════════════════════════════════════════
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  const histFilter = document.getElementById('historyStoreFilter');
+
+  let history = lsGet('ims_pi_history') || [];
+  const isAdmin = appState.user?.role === 'admin';
+
+  if (!isAdmin) {
+    history = history.filter(h => h.store === appState.user?.store);
+  }
+
+  // Store filter chips for admin
+  if (isAdmin && histFilter.children.length <= 1) {
+    histFilter.innerHTML = '';
+    const allBtn = document.createElement('span');
+    allBtn.className = 'store-pill active';
+    allBtn.textContent = 'All';
+    allBtn.onclick = () => { window._histStore='ALL'; document.querySelectorAll('#historyStoreFilter .store-pill').forEach(p=>p.classList.remove('active')); allBtn.classList.add('active'); renderHistory(); };
+    histFilter.appendChild(allBtn);
+    STORES.forEach(s => {
+      const p = document.createElement('span');
+      p.className = 'store-pill';
+      p.textContent = s;
+      p.onclick = () => { window._histStore=s; document.querySelectorAll('#historyStoreFilter .store-pill').forEach(x=>x.classList.remove('active')); p.classList.add('active'); renderHistory(); };
+      histFilter.appendChild(p);
+    });
+  }
+
+  if (isAdmin && window._histStore && window._histStore !== 'ALL') {
+    history = history.filter(h => h.store === window._histStore);
+  }
+
+  if (!history.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📂</div><p>No PI history yet</p></div>';
+    return;
+  }
+
+  let extraHtml = '';
+  if (isAdmin) {
+    extraHtml = `<button class="btn btn-danger btn-sm btn-full" style="margin-bottom:10px" onclick="deleteAllHistory()">🗑 Delete All History</button>`;
+  }
+
+  el.innerHTML = extraHtml + history.map(h => {
+    const varCount = (h.result||[]).filter(r=>r.variance!==0).length;
+    const statusColor = h.recountStatus === 'r2_done' ? 'chip-purple' : h.recountStatus === 'r1_done' || h.recountStatus === 'r2_approved' ? 'chip-yellow' : 'chip-green';
+    const statusLabel = h.recountStatus === 'none' ? 'Submitted' : h.recountStatus === 'r1_done' ? 'R1 Done' : h.recountStatus === 'r2_approved' ? 'R2 Approved' : h.recountStatus === 'r2_done' ? 'R2 Done' : 'Submitted';
+    return `<div class="history-item">
+      <div style="display:flex;align-items:center;justify-content:space-between" onclick="showHistoryDetail('${h.id}')">
+        <div style="font-weight:700">${h.store} — ${h.week}</div>
+        <span class="chip ${statusColor}">${statusLabel}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px" onclick="showHistoryDetail('${h.id}')">
+        ${(h.result||[]).length} items · <span style="color:var(--danger)">${varCount} variance</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <div class="history-date">${new Date(h.ts).toLocaleString()}</div>
+        ${isAdmin ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteHistoryItem('${h.id}')">🗑 Delete</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showHistoryDetail(id) {
+  const history = lsGet('ims_pi_history') || [];
+  const h = history.find(x=>x.id===id);
+  if (!h) return;
+
+  const isAdmin = appState.user?.role === 'admin';
+  const variantRows = (h.result||[]).filter(r=>r.variance!==0);
+
+  let html = `
+    <div style="margin-bottom:10px">
+      <span class="chip chip-blue">${h.store}</span>
+      <span class="chip chip-green" style="margin-left:4px">${h.week}</span>
+    </div>
+    ${variantRows.length ? `
+    <div class="card-title">Variance Items</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Code</th><th>Dept</th><th>Brand</th><th>MRP</th><th>Sys</th><th>Phys</th><th>Var</th><th>MRP Var</th></tr></thead>
+      <tbody>${variantRows.map(r=>`<tr>
+        <td><b>${r.code}</b></td><td>${r.dept}</td><td>${r.brand}</td>
+        <td>₹${r.mrp}</td><td>${r.sysQty}</td><td>${r.physQty}</td>
+        <td class="${r.variance>0?'var-pos':r.variance<0?'var-neg':'var-zero'}">${r.variance>0?'+':''}${r.variance}</td>
+        <td class="${(r.mrpVariance||0)>0?'var-pos':(r.mrpVariance||0)<0?'var-neg':'var-zero'}">₹${(r.mrpVariance||0).toFixed(2)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : '<p style="color:var(--success);font-size:12px">✅ No variance items</p>'}`;
+
+  // Recount photos for admin
+  if (isAdmin && h.r1Photos && Object.keys(h.r1Photos).length) {
+    html += `<hr class="divider"><div class="card-title">📷 Recount 1 Photos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${Object.entries(h.r1Photos).map(([c,d])=>`
+          <div style="text-align:center">
+            <img src="${d}" style="width:100%;border-radius:6px;max-height:120px;object-fit:cover">
+            <div style="font-size:10px;margin-top:3px;color:var(--text2)">${c}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+  if (isAdmin && h.r2Photos && Object.keys(h.r2Photos).length) {
+    html += `<hr class="divider"><div class="card-title">📷 Recount 2 Photos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${Object.entries(h.r2Photos).map(([c,d])=>`
+          <div style="text-align:center">
+            <img src="${d}" style="width:100%;border-radius:6px;max-height:120px;object-fit:cover">
+            <div style="font-size:10px;margin-top:3px;color:var(--text2)">${c}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // Admin recount approval button
+  if (isAdmin && h.recountStatus === 'r1_done') {
+    html += `<hr class="divider">
+      <button class="btn btn-primary btn-full" onclick="approveRecount2('${id}')">✅ Approve Recount 2</button>`;
+  }
+
+  document.getElementById('historyModalTitle').textContent = `${h.store} · ${h.week}`;
+  document.getElementById('historyModalContent').innerHTML = html;
+  openModal('historyModal');
+}
+
+function approveRecount2(id) {
+  const history = lsGet('ims_pi_history') || [];
+  const idx = history.findIndex(h=>h.id===id);
+  if (idx<0) return;
+  history[idx].recountStatus = 'r2_approved';
+  lsSet('ims_pi_history', history);
+  if (firebaseOK) db.ref(`pi_history/${id}`).update({recountStatus:'r2_approved'}).catch(()=>{});
+  showToast('✅ Recount 2 approved');
+  closeModal('historyModal');
+  renderHistory();
+  renderAdminPanel();
+}
+
+// ═══════════════════════════════════════════════════
+//   ADMIN PANEL
+// ═══════════════════════════════════════════════════
+function assignPI() {
+  const week = document.getElementById('adminPIWeek').value;
+  if (!week) { showToast('Select a week'); return; }
+  const checks = document.querySelectorAll('#adminStoreCheckboxes input:checked');
+  const stores = Array.from(checks).map(c=>c.value);
+  if (!stores.length) { showToast('Select at least one store'); return; }
+
+  const assignments = lsGet('ims_pi_assignments') || {};
+  assignments[week] = { week, stores, assignedAt: new Date().toISOString() };
+  lsSet('ims_pi_assignments', assignments);
+  appState.piAssignment = assignments;
+
+  if (firebaseOK) db.ref('pi_assignments').set(assignments).catch(()=>{});
+  showToast(`✅ PI assigned for ${week}: ${stores.join(', ')}`);
+}
+
+function renderAdminPanel() {
+  if (appState.user?.role !== 'admin') return;
+
+  // Store checkboxes
+  const checkWrap = document.getElementById('adminStoreCheckboxes');
+  if (!checkWrap.children.length) {
+    STORES.forEach(s => {
+      const label = document.createElement('label');
+      label.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;background:var(--surface2);padding:6px 10px;border-radius:6px;';
+      const cb = document.createElement('input');
+      cb.type='checkbox'; cb.value=s;
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(s));
+      checkWrap.appendChild(label);
+    });
+  }
+
+  // Stats
+  const history = lsGet('ims_pi_history') || [];
+  const now = new Date();
+  const y = now.getFullYear();
+  const d = new Date(Date.UTC(y,0,4));
+  const dayNum = Math.floor((now - d) / 86400000);
+  const week = Math.ceil((dayNum + d.getUTCDay() + 1) / 7);
+  const currentWeek = `${y}-W${String(week).padStart(2,'0')}`;
+
+  const thisWeek = history.filter(h => h.week === currentWeek);
+  document.getElementById('adminStatPI').textContent = thisWeek.length;
+
+  // Average variance
+  let totalVar=0, totalItems=0;
+  history.forEach(h => {
+    (h.result||[]).forEach(r=>{ totalVar+=Math.abs(r.variance); totalItems++; });
+  });
+  document.getElementById('adminStatVariance').textContent = totalItems ? (totalVar/totalItems).toFixed(1) : '—';
+
+  // Variance highlights
+  const varWrap = document.getElementById('adminVarianceList');
+  const storeVars = {};
+  thisWeek.forEach(h => {
+    const totalV = (h.result||[]).reduce((s,r)=>s+Math.abs(r.variance),0);
+    storeVars[h.store] = (storeVars[h.store]||0) + totalV;
+  });
+  const sorted = Object.entries(storeVars).sort((a,b)=>b[1]-a[1]);
+  if (!sorted.length) {
+    varWrap.innerHTML = '<div style="color:var(--text2);font-size:12px">No submissions this week</div>';
+  } else {
+    const avgVar = sorted.reduce((s,[,v])=>s+v,0)/sorted.length;
+    varWrap.innerHTML = sorted.map(([store,v])=>{
+      const cls = v > avgVar*1.5 ? 'variance-high' : v > avgVar ? 'variance-med' : '';
+      return `<div class="${cls}" style="padding:8px;margin-bottom:6px;background:var(--surface2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600">${store}</span>
+        <span class="chip ${v>avgVar*1.5?'chip-red':v>avgVar?'chip-yellow':'chip-green'}">${v} units</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Recount approvals
+  const pendingR1 = history.filter(h=>h.recountStatus==='r1_done');
+  const approvalEl = document.getElementById('recountApprovalList');
+  if (!pendingR1.length) {
+    approvalEl.innerHTML = '<div style="color:var(--text2);font-size:12px">No pending approvals</div>';
+  } else {
+    approvalEl.innerHTML = pendingR1.map(h=>`
+      <div class="approval-item">
+        <div>
+          <div style="font-weight:600">${h.store}</div>
+          <div style="font-size:11px;color:var(--text2)">${h.week} · Recount 1 submitted</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-secondary" onclick="showHistoryDetail('${h.id}')">View</button>
+          <button class="btn btn-sm btn-success" onclick="approveRecount2('${h.id}')">Approve R2</button>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function renderPINs() {
+  if (appState.user?.role !== 'admin') return;
+  const pins = lsGet('ims_pins') || DEFAULT_PINS;
+  const el = document.getElementById('pinManageList');
+  const allStores = [...STORES, 'admin'];
+  el.innerHTML = allStores.map(s=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="min-width:80px;font-size:13px;font-weight:600">${s}</div>
+      <input type="text" value="${pins[s]||DEFAULT_PINS[s]}" id="pin_${s}"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px;outline:none" maxlength="6">
+      <button class="btn btn-sm btn-secondary" onclick="savePin('${s}')">Save</button>
+    </div>`).join('');
+}
+
+function savePin(store) {
+  const val = document.getElementById(`pin_${store}`).value.trim();
+  if (!val) return;
+  const pins = lsGet('ims_pins') || {...DEFAULT_PINS};
+  pins[store] = val;
+  lsSet('ims_pins', pins);
+  showToast(`✅ PIN updated for ${store}`);
+}
+
+function deleteHistoryItem(id) {
+  if (!confirm('Permanently delete this PI history record? This cannot be undone.')) return;
+  let history = lsGet('ims_pi_history') || [];
+  history = history.filter(h => h.id !== id);
+  lsSet('ims_pi_history', history);
+  if (firebaseOK) db.ref(`pi_history/${id}`).remove().catch(()=>{});
+  showToast('🗑 History record deleted');
+  renderHistory();
+  renderAdminPanel();
+}
+
+function deleteAllHistory() {
+  if (!confirm('Permanently delete ALL PI history for ALL stores? This cannot be undone.')) return;
+  if (!confirm('Are you absolutely sure? This will erase all submitted PI records permanently.')) return;
+  lsSet('ims_pi_history', []);
+  if (firebaseOK) db.ref('pi_history').remove().catch(()=>{});
+  showToast('🗑 All PI history deleted');
+  renderHistory();
+  renderAdminPanel();
+}
+
+// ═══════════════════════════════════════════════════
+//   FORGOT PIN (ADMIN)
+// ═══════════════════════════════════════════════════
+const ADMIN_RECOVERY_CODE = 'IMS-RESET-2024';
+
+function resetAdminPin() {
+  const code = document.getElementById('forgotRecoveryCode').value.trim();
+  const newPin = document.getElementById('forgotNewPin').value.trim();
+  if (code !== ADMIN_RECOVERY_CODE) { showToast('❌ Invalid recovery code'); return; }
+  if (!newPin || newPin.length < 4) { showToast('Enter a valid PIN (min 4 digits)'); return; }
+  const pins = lsGet('ims_pins') || {...DEFAULT_PINS};
+  pins['admin'] = newPin;
+  lsSet('ims_pins', pins);
+  showToast('✅ Admin PIN reset successfully');
+  document.getElementById('forgotRecoveryCode').value = '';
+  document.getElementById('forgotNewPin').value = '';
+  closeModal('forgotPinModal');
+}
+
+
+// ═══════════════════════════════════════════════════
+// Check if Firebase is not configured — prompt user
+window.addEventListener('load', () => {
+  const apiKey = localStorage.getItem('ims_fb_apiKey');
+  if (!apiKey || apiKey === 'YOUR_API_KEY') {
+    // App works in offline/localStorage mode — Firebase optional
+    console.log('Running in offline mode (localStorage). Set Firebase config for cross-device sync.');
+  }
+});
+
+// ═══════════════════════════════════════════════════
+//   UTILITIES
+// ═══════════════════════════════════════════════════
+function showToast(msg, dur=2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>{ el.style.display='none'; }, dur);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
