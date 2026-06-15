@@ -6,7 +6,6 @@
 <title>Inventory Management System</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -18,25 +17,38 @@
      ▶▶  ONLY EDIT THIS SECTION  ◀◀
 ════════════════════════════════════════════════════════ -->
 <script>
-/* ── STEP 1: Paste your Firebase config here ── */
+/* ── STEP 1: Firebase Realtime Database config (for all app data) ── */
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCR9BE9aP37ucs9SGxfOi88RNCYV9B8Krg",
   authDomain:        "ims--app.firebaseapp.com",
-  databaseURL:       "https://ims---app-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL:       "https://ims--app-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "ims--app",
-  storageBucket:     "ims--app.firebasestorage.app",
   messagingSenderId: "1023725426471",
   appId:             "1:1023725426471:web:1968a4496075289658fb02"
 };
 
-/* ── STEP 2: Preset admin login (changeable later from inside the app) ── */
+/* ── STEP 2: Google Drive config (for recount PHOTO uploads only) ──
+   How to set up:
+   1. Go to console.cloud.google.com → Create/select a project
+   2. Enable "Google Drive API"
+   3. Create OAuth 2.0 Client ID (Web application) → add your GitHub Pages URL to Authorized JS origins
+   4. Create a shared Google Drive folder for recount photos → copy its ID from the URL
+   5. Paste CLIENT_ID and DRIVE_FOLDER_ID below
+*/
+const GDRIVE_CONFIG = {
+  CLIENT_ID:     "PASTE_YOUR_GOOGLE_OAUTH_CLIENT_ID_HERE",   // e.g. "1234567890-xxxx.apps.googleusercontent.com"
+  DRIVE_FOLDER_ID: "PASTE_YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE", // e.g. "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs"
+  SCOPES:        "https://www.googleapis.com/auth/drive.file"
+};
+
+/* ── STEP 3: Preset admin login ── */
 const PRESET_ADMIN = {
   username: "admin",
-  password: "admin123",
+  password: "Admin@IMS2024",
   name:     "Admin"
 };
 
-/* ── STEP 3: Your store names ── */
+/* ── STEP 4: Your store names ── */
 const STORES = ["Kattur","Cumbum","MGT","Theni","Dindigul"];
 </script>
 <!-- ════════════════════════════════════════════════════════ -->
@@ -273,19 +285,19 @@ tr:hover td{background:rgba(37,99,235,.025);}
 <!-- ══ SETUP SCREEN ══ -->
 <div id="setupWrap">
   <div class="scard2">
-    <h2>⚙️ Quick Setup — 3 Steps</h2>
-    <p class="sub">Open this HTML file in a text editor and fill in your Firebase details at the top.</p>
+    <h2>⚙️ Quick Setup — 4 Steps</h2>
+    <p class="sub">Open this HTML file in a text editor and fill in your config details at the top.</p>
     <div class="cstep"><div class="cnum">1</div><div><b>Get Firebase Config</b>
-      <p>Go to <b>console.firebase.google.com</b> → Your Project → ⚙️ Project Settings → Your Apps → Web App → Copy the <code>firebaseConfig</code> values and paste them in the <b>FIREBASE_CONFIG</b> block at the top of this HTML file.</p></div></div>
+      <p>Go to <b>console.firebase.google.com</b> → Your Project → ⚙️ Project Settings → Your Apps → Web App → Copy the <code>firebaseConfig</code> values (no storageBucket needed) and paste them in the <b>FIREBASE_CONFIG</b> block at the top.</p></div></div>
     <div class="cstep"><div class="cnum">2</div><div><b>Enable Realtime Database</b>
       <p>Firebase Console → Build → Realtime Database → Create Database → <b>Start in test mode</b> → Choose region → Enable.</p></div></div>
-    <div class="cstep"><div class="cnum">3</div><div><b>Enable Storage</b>
-      <p>Firebase Console → Build → Storage → Get started → Production mode → Done. (Required for recount photos.)</p></div></div>
+    <div class="cstep"><div class="cnum">3</div><div><b>Set Up Google Drive for Photos</b>
+      <p>Go to <b>console.cloud.google.com</b> → Enable <b>Google Drive API</b> → Create OAuth 2.0 Client ID (Web) → Add your GitHub Pages URL to Authorized JS origins → Create a shared Drive folder → Paste <code>CLIENT_ID</code> and <code>DRIVE_FOLDER_ID</code> in <b>GDRIVE_CONFIG</b> at the top.</p></div></div>
     <div class="cstep"><div class="cnum">4</div><div><b>Deploy to GitHub Pages</b>
       <p>Rename file to <code>index.html</code> → push to GitHub repo → Settings → Pages → Deploy from main branch. The live URL is your app URL.</p></div></div>
     <div class="info iyl" style="margin-top:10px;">
-      💡 After setup, first login: username <b>admin</b> · password <b>admin123</b><br>
-      Change these from <b>Admin → Manage Users → My Credentials</b> inside the app.
+      💡 After setup, first login: username <b>admin</b> · password <b>Admin@IMS2024</b><br>
+      Add more users from <b>Admin → Manage Users → Add User</b> inside the app.
     </div>
     <button class="btn bp bfl" style="margin-top:12px;" onclick="location.reload()">↺ Retry After Setup</button>
   </div>
@@ -323,7 +335,7 @@ tr:hover td{background:rgba(37,99,235,.025);}
     <button class="btn bp bfl" id="lgBtn" onclick="doLogin()">Sign In →</button>
     <div id="lgErr" style="color:var(--dn);font-size:12px;margin-top:9px;display:none;text-align:center;"></div>
     <div style="font-size:11px;color:var(--tx3);text-align:center;margin-top:14px;">
-      Default: <b>admin</b> / <b>admin123</b>
+      Default: <b>admin</b> / <b>Admin@IMS2024</b>
     </div>
   </div>
 </div>
@@ -707,9 +719,9 @@ tr:hover td{background:rgba(37,99,235,.025);}
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  FIREBASE INIT
+//  FIREBASE INIT (Database only — photos go to Google Drive)
 // ═══════════════════════════════════════════════════════════
-let db, stor, fbOK = false;
+let db, fbOK = false;
 
 function configIsEmpty() {
   return !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey.includes('PASTE');
@@ -719,7 +731,6 @@ function initFB() {
   try {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db   = firebase.database();
-    stor = firebase.storage();
     fbOK = true; return true;
   } catch(e) { return false; }
 }
@@ -732,6 +743,73 @@ const LS = {
   set: (k,v) => { try { localStorage.setItem('ims_'+k, JSON.stringify(v)); } catch(e){}},
   del: k => localStorage.removeItem('ims_'+k)
 };
+
+// ═══════════════════════════════════════════════════════════
+//  GOOGLE DRIVE PHOTO UPLOAD
+// ═══════════════════════════════════════════════════════════
+let _gdriveToken = null;
+let _gdriveTokenExp = 0;
+
+function gdriveConfigured() {
+  return GDRIVE_CONFIG.CLIENT_ID && !GDRIVE_CONFIG.CLIENT_ID.includes('PASTE') &&
+         GDRIVE_CONFIG.DRIVE_FOLDER_ID && !GDRIVE_CONFIG.DRIVE_FOLDER_ID.includes('PASTE');
+}
+
+/* Request OAuth2 token via Google Identity Services (popup) */
+function gdriveAuth() {
+  return new Promise((resolve, reject) => {
+    if (_gdriveToken && Date.now() < _gdriveTokenExp) { resolve(_gdriveToken); return; }
+    if (!window.google || !window.google.accounts) {
+      // Load GIS library on demand
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.onload = () => gdriveAuth().then(resolve).catch(reject);
+      s.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+      document.head.appendChild(s);
+      return;
+    }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GDRIVE_CONFIG.CLIENT_ID,
+      scope: GDRIVE_CONFIG.SCOPES,
+      callback: (resp) => {
+        if (resp.error) { reject(new Error(resp.error)); return; }
+        _gdriveToken = resp.access_token;
+        _gdriveTokenExp = Date.now() + (resp.expires_in - 60) * 1000;
+        resolve(_gdriveToken);
+      }
+    });
+    client.requestAccessToken();
+  });
+}
+
+/* Upload a base64 data URL as JPEG to Google Drive, return public URL */
+async function uploadPhotoToDrive(dataUrl, filename) {
+  if (!gdriveConfigured()) {
+    // Fallback: store base64 directly in Firebase (no Drive configured)
+    return null;
+  }
+  const token = await gdriveAuth();
+  const blob = await (await fetch(dataUrl)).blob();
+  const meta = JSON.stringify({ name: filename, parents: [GDRIVE_CONFIG.DRIVE_FOLDER_ID] });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file', blob, filename);
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webContentLink', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token },
+    body: form
+  });
+  if (!res.ok) throw new Error('Drive upload failed: ' + res.status);
+  const data = await res.json();
+  // Make the file publicly readable
+  await fetch(`https://www.googleapis.com/drive/v3/files/${data.id}/permissions`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' })
+  });
+  // Return a direct viewable link
+  return `https://drive.google.com/uc?export=view&id=${data.id}`;
+}
 
 // ═══════════════════════════════════════════════════════════
 //  APP STATE
@@ -1290,12 +1368,16 @@ async function submitRC() {
   const uploads={};
   for (const it of items) {
     try {
-      const blob=await (await fetch(it.photo)).blob();
-      const ref=stor.ref(`recountPhotos/${RC.piId}/${RC.num}/${it.code}_${Date.now()}.jpg`);
-      await ref.put(blob);
-      uploads[it.code]={code:it.code,qty:it.qty,photoURL:await ref.getDownloadURL(),ts:it.ts};
+      let photoURL = null;
+      if (gdriveConfigured()) {
+        const fname = `RC_${RC.piId}_R${RC.num}_${it.code}_${Date.now()}.jpg`;
+        photoURL = await uploadPhotoToDrive(it.photo, fname);
+      }
+      uploads[it.code] = { code:it.code, qty:it.qty, photoURL: photoURL||null, photoBase64: photoURL?null:it.photo, ts:it.ts };
     } catch(e) {
-      uploads[it.code]={code:it.code,qty:it.qty,photoBase64:it.photo,ts:it.ts};
+      // Fallback: save base64 if Drive upload fails
+      uploads[it.code] = { code:it.code, qty:it.qty, photoBase64:it.photo, ts:it.ts };
+      toast(`⚠️ Drive upload failed for ${it.code}, saved locally`,'');
     }
   }
   const k=RC.num===1?'r1':'r2';
