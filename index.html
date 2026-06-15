@@ -1,1302 +1,1735 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>Kidza Staff Training</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<!-- Firebase Realtime Database SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Inventory Management System</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+
+<!-- ════════════════════════════════════════════════════════
+     ▶▶  ONLY EDIT THIS SECTION  ◀◀
+════════════════════════════════════════════════════════ -->
+<script>
+/* ── STEP 1: Paste your Firebase config here ── */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBQJXTeqPCGejm5KysDj4ez4AIoJpz8t8A",
+  authDomain:        "ims---app.firebaseapp.com",
+  databaseURL:       "https://ims---app-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "ims---app",
+  storageBucket:     "ims---app.firebasestorage.app",
+  messagingSenderId: "489115122180",
+  appId:             "1:489115122180:web:e1a7b9fde812e4bc90d351"
+};
+
+/* ── STEP 2: Preset admin login (changeable later from inside the app) ── */
+const PRESET_ADMIN = {
+  username: "admin",
+  password: "admin123",
+  name:     "Admin"
+};
+
+/* ── STEP 3: Your store names ── */
+const STORES = ["Kattur","Cumbum","MGT","Theni","Dindigul"];
+</script>
+<!-- ════════════════════════════════════════════════════════ -->
+
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-:root{
-  --blue:#1a56db;--blue2:#1e40af;--blue3:#3b82f6;--blue-light:#eff6ff;--blue-muted:#dbeafe;
-  --black:#0f172a;--dark:#1e293b;--mid:#475569;--muted:#94a3b8;--border:#e2e8f0;
-  --bg:#f8fafc;--white:#ffffff;
-  --success:#16a34a;--danger:#dc2626;--warn:#d97706;--warn-bg:#fffbeb;
-  --radius:16px;--shadow:0 4px 24px rgba(15,23,42,.08);
-  --font:'DM Sans',sans-serif;--display:'Sora',sans-serif;
-  /* ── ANDROID MATERIAL DESIGN 3 TOKENS (added) ── */
-  --android-primary:#1a56db;--android-secondary:#3b82f6;--android-surface:#ffffff;--android-background:#f8fafc;
-}
-/* ── SYNC STATUS BADGE (added) ── */
-#sync-status{position:fixed;top:8px;right:8px;z-index:7000;font-size:11px;font-weight:700;padding:5px 12px;border-radius:50px;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:.25s;}
-#sync-status .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
-#sync-status.online{background:#dcfce7;color:var(--success);}
-#sync-status.online .dot{background:var(--success);}
-#sync-status.offline{background:#fee2e2;color:var(--danger);}
-#sync-status.offline .dot{background:var(--danger);}
-#sync-status.syncing{background:var(--blue-muted);color:var(--blue2);}
-#sync-status.syncing .dot{background:var(--blue2);animation:blink 1s infinite;}
-/* ── Ripple effect for buttons/cards (Android touch feedback) ── */
-.btn,.item-row,.opt-card,.qtype-card,.tab-btn{position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;}
-.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:rippleAnim .5s ease-out;pointer-events:none;}
-.opt-card .ripple,.item-row .ripple,.qtype-card .ripple,.tab-btn .ripple{background:rgba(26,86,219,.18);}
-@keyframes rippleAnim{to{transform:scale(2.6);opacity:0;}}
-/* ── Safe-area support for notches / nav bars ── */
-body{padding-bottom:env(safe-area-inset-bottom);}
-.app-header{padding-top:max(52px,env(safe-area-inset-top));}
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--black);overflow-x:hidden;}
-.screen{display:none;min-height:100vh;padding-bottom:24px;}
-.screen.active{display:block;animation:fadeUp .28s ease both;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.app-header{background:linear-gradient(135deg,var(--blue2) 0%,var(--blue) 100%);padding:52px 20px 24px;border-radius:0 0 28px 28px;position:relative;overflow:hidden;}
-.app-header::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06);}
-.app-header::after{content:'';position:absolute;bottom:-60px;left:-20px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04);}
-.hd-brand{font-family:var(--display);font-size:28px;font-weight:800;color:#fff;letter-spacing:1px;position:relative;z-index:1;}
-.hd-sub{font-size:13px;color:rgba(255,255,255,.65);margin-top:2px;position:relative;z-index:1;}
-.hd-row{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
-.back-bar{display:flex;align-items:center;gap:10px;padding:16px 16px 0;}
-.back-btn{width:36px;height:36px;border-radius:50%;background:var(--white);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.06);flex-shrink:0;}
-.back-title{font-family:var(--display);font-size:16px;font-weight:700;}
-.card{background:var(--white);margin:0 14px 14px;padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);}
-.pg-title{font-family:var(--display);font-size:21px;font-weight:800;margin-bottom:4px;}
-.pg-sub{font-size:13px;color:var(--muted);}
-.lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
-input,select,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);font-size:15px;font-family:var(--font);background:var(--white);color:var(--black);outline:none;transition:.2s;}
-input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
-textarea{resize:vertical;min-height:72px;}
-.iw{margin-bottom:14px;}
-.btn{border:none;padding:13px 20px;border-radius:50px;cursor:pointer;font-weight:700;font-size:14px;font-family:var(--font);transition:.18s;display:inline-flex;align-items:center;justify-content:center;gap:7px;}
-.btn:active{transform:scale(.97);}
-.btn-blue{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 4px 16px rgba(26,86,219,.28);}
-.btn-outline{background:var(--white);border:1.5px solid var(--border);color:var(--dark);}
-.btn-success{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;}
-.btn-danger{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;}
-.btn-warn{background:linear-gradient(135deg,#d97706,#b45309);color:#fff;}
-.btn-ghost{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);color:#fff;}
-.btn-full{width:100%;}
-.btn-sm{padding:9px 14px;font-size:13px;}
-.btn-xs{padding:6px 10px;font-size:11px;}
-.row{display:flex;gap:10px;}
-.badge{padding:4px 10px;border-radius:50px;font-size:11px;font-weight:700;letter-spacing:.3px;display:inline-block;}
-.bd-pass{background:#dcfce7;color:var(--success);}
-.bd-fail{background:#fee2e2;color:var(--danger);}
-.bd-warn{background:var(--warn-bg);color:var(--warn);}
-.bd-blue{background:var(--blue-muted);color:var(--blue2);}
-.bd-grey{background:#f1f5f9;color:var(--mid);}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
-.stat-num{font-family:var(--display);font-size:28px;font-weight:800;color:var(--blue);}
-.stat-lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
-.tabs{display:flex;background:#f1f5f9;border-radius:14px;padding:4px;margin-bottom:18px;gap:2px;}
-.tab-btn{flex:1;padding:9px 4px;border:none;background:transparent;border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;font-family:var(--font);color:var(--muted);transition:.2s;}
-.tab-btn.active{background:var(--white);color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.08);font-weight:700;}
-.item-row{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:1.5px solid var(--border);margin-bottom:10px;background:var(--white);cursor:pointer;transition:.18s;}
-.item-row:hover{border-color:var(--blue3);background:var(--blue-light);}
-.item-row.done{border-color:#86efac;background:#f0fdf4;cursor:default;}
-.item-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.ic-video{background:#fee2e2;}.ic-ppt{background:#fff7ed;}.ic-pdf{background:#eff6ff;}.ic-img{background:#fdf4ff;}.ic-course{background:var(--blue-muted);}
-.item-info{flex:1;min-width:0;}
-.item-title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.item-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.opt-card{border:2px solid var(--border);padding:14px 16px;border-radius:14px;margin-bottom:10px;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:12px;}
-.opt-letter{width:32px;height:32px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--mid);flex-shrink:0;transition:.18s;}
-.opt-card:hover{border-color:var(--blue3);background:var(--blue-light);}
-.opt-card:hover .opt-letter{background:var(--blue3);color:#fff;}
-.opt-card.sel{border-color:var(--blue);background:var(--blue-light);}
-.opt-card.sel .opt-letter{background:var(--blue);color:#fff;}
-.opt-card.correct{border-color:var(--success);background:#f0fdf4;}
-.opt-card.correct .opt-letter{background:var(--success);color:#fff;}
-.opt-card.wrong{border-color:var(--danger);background:#fef2f2;}
-.opt-card.wrong .opt-letter{background:var(--danger);color:#fff;}
-.opt-text{font-weight:600;font-size:14px;line-height:1.4;}
-.prog-bar{height:6px;background:#e2e8f0;border-radius:50px;overflow:hidden;margin-bottom:14px;}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue3),var(--blue));transition:.35s;border-radius:50px;}
-.timer-pill{background:var(--blue-light);color:var(--blue2);padding:8px 16px;border-radius:50px;font-weight:800;font-size:16px;border:1.5px solid var(--blue-muted);display:flex;align-items:center;gap:5px;}
-.timer-pill.urgent{background:#fee2e2;color:var(--danger);border-color:#fecaca;animation:pulse .8s infinite;}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
-.score-ring{width:140px;height:140px;border-radius:50%;border:6px solid var(--blue);background:var(--blue-light);margin:16px auto;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.score-ring h1{font-family:var(--display);font-size:46px;font-weight:800;color:var(--blue);line-height:1;}
-.score-ring small{font-size:13px;color:var(--muted);}
-.rev-item{padding:14px;border-radius:12px;margin-bottom:10px;font-size:13px;line-height:1.7;}
-.rev-ok{background:#f0fdf4;border-left:4px solid var(--success);}
-.rev-ng{background:#fef2f2;border-left:4px solid var(--danger);}
-.rev-skip{background:#fffbeb;border-left:4px solid var(--warn);}
-.tbl-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border);}
-table{width:100%;border-collapse:collapse;min-width:360px;}
-th{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff;padding:11px 12px;text-align:left;font-size:12px;font-weight:700;white-space:nowrap;}
-td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:#f8fafc;}
-.lb-item{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;margin-bottom:8px;background:var(--white);border:1.5px solid var(--border);}
-.lb-rank{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;}
-.r1{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;box-shadow:0 3px 10px rgba(251,191,36,.4);}
-.r2{background:linear-gradient(135deg,#94a3b8,#64748b);color:#fff;}
-.r3{background:linear-gradient(135deg,#cd7f32,#a16207);color:#fff;}
-.rN{background:var(--blue-light);color:var(--blue2);}
-.lb-name{font-weight:700;font-size:14px;}
-.lb-sub{font-size:12px;color:var(--muted);}
-.lb-pct{font-family:var(--display);font-size:22px;font-weight:800;color:var(--blue);}
-.lb-me{border:2px solid var(--blue);background:var(--blue-light);}
-.notif-card{display:flex;gap:12px;padding:14px;border-radius:14px;background:var(--warn-bg);border:1.5px solid #fde68a;margin:0 14px 12px;align-items:flex-start;}
-.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--warn);display:inline-block;margin-left:4px;animation:blink 1.4s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.inst-step{display:flex;gap:12px;padding:12px;background:var(--blue-light);border-radius:12px;margin-bottom:8px;align-items:flex-start;}
-.inst-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;margin-top:1px;}
-.pip-row{display:flex;align-items:center;gap:6px;}
-.pip{width:12px;height:12px;border-radius:50%;background:var(--border);}
-.pip.used{background:var(--blue);}
-.chart-wrap{position:relative;width:100%;height:190px;}
-.modal-ov{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;display:flex;align-items:flex-end;justify-content:center;}
-.modal-box{background:var(--white);border-radius:24px 24px 0 0;padding:24px 20px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;animation:slideUp .28s ease;}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-hnd{width:40px;height:4px;background:var(--border);border-radius:50px;margin:0 auto 20px;}
-.modal-ttl{font-family:var(--display);font-size:17px;font-weight:700;margin-bottom:16px;}
-.cg-ov{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:999;display:flex;align-items:center;justify-content:center;}
-.cg-box{background:var(--white);border-radius:28px;padding:32px 24px;max-width:320px;width:90%;text-align:center;position:relative;overflow:hidden;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
-@keyframes popIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
-.cg-emoji{font-size:62px;display:block;animation:bounce .7s ease infinite alternate;}
-@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
-.confetti-p{position:absolute;width:7px;height:7px;border-radius:2px;animation:cfall 2.8s ease-in forwards;}
-@keyframes cfall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(430px) rotate(720deg);opacity:0}}
-.qtype-card{border:2px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;transition:.18s;display:flex;gap:14px;align-items:center;}
-.qtype-card:hover{border-color:var(--blue3);background:var(--blue-light);}
-.qtype-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
-.qtk{background:var(--blue-light);}.qts{background:#fff7ed;}
-.qtype-title{font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:3px;}
-.qtype-desc{font-size:12px;color:var(--muted);}
-.alert{padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px;}
-.al-warn{background:var(--warn-bg);color:#92400e;border:1px solid #fde68a;}
-.al-ok{background:#f0fdf4;color:var(--success);border:1px solid #bbf7d0;}
-.al-info{background:var(--blue-light);color:var(--blue2);border:1px solid var(--blue-muted);}
-.al-err{background:#fef2f2;color:var(--danger);border:1px solid #fecaca;}
-.qb{background:#f8fafc;border-radius:14px;padding:14px;margin-bottom:12px;border:1.5px solid var(--border);}
-.qb-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.opt-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
-.opt-row input[type=radio]{width:18px;height:18px;flex-shrink:0;accent-color:var(--blue);}
-.opt-row input[type=text]{flex:1;}
-.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
-.hidden{display:none!important;}
-.ctr{text-align:center;}
-.sep{border:none;border-top:1px solid var(--border);margin:14px 0;}
-.muted{color:var(--muted);}
-.mb1{margin-bottom:10px;}.mb2{margin-bottom:18px;}.mt1{margin-top:10px;}.mt2{margin-top:18px;}
-.sp{height:14px;}
+:root{--bg:#f0f4f9;--sf:#fff;--sf2:#f5f7fb;--sf3:#eaeff7;--bd:#dde3ee;--ac:#2563eb;--acl:#eff4ff;--ac2:#7c3aed;--ok:#16a34a;--okl:#f0fdf4;--wn:#d97706;--wnl:#fffbeb;--dn:#dc2626;--dnl:#fef2f2;--tx:#111827;--tx2:#6b7280;--tx3:#9ca3af;--r:12px;--rs:8px;--sh:0 1px 4px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);--shs:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;margin:0;padding:0;}html,body{height:100%;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--tx);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border-radius:var(--rs);border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.bp{background:var(--ac);color:#fff;}.bp:hover:not(:disabled){background:#1d4ed8;}
+.bok{background:var(--ok);color:#fff;}.bok:hover:not(:disabled){background:#15803d;}
+.bdn{background:var(--dn);color:#fff;}.bdn:hover:not(:disabled){background:#b91c1c;}
+.bwn{background:var(--wn);color:#fff;}
+.bgh{background:transparent;color:var(--ac);border:1.5px solid var(--ac);}.bgh:hover:not(:disabled){background:var(--acl);}
+.bsc{background:var(--sf);color:var(--tx);border:1.5px solid var(--bd);}.bsc:hover:not(:disabled){background:var(--sf2);}
+.bsm{padding:6px 11px;font-size:12px;}.bxs{padding:4px 8px;font-size:11px;border-radius:5px;}.bfl{width:100%;}
+
+/* Fields */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.inp{width:100%;background:var(--sf2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px 13px;color:var(--tx);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;}
+.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.inpw{position:relative;}.inpw .inp{padding-right:40px;}
+.eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx2);font-size:15px;}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+textarea.inp{resize:vertical;font-family:monospace;letter-spacing:1px;}
+
+/* Cards */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--shs);}
+.cttl{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
+.ctrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+
+/* Stat grid */
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;}
+@media(min-width:480px){.sgrid{grid-template-columns:repeat(3,1fr);}}
+.scard{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;position:relative;overflow:hidden;box-shadow:var(--shs);}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.ca::before{background:var(--ac);}.co::before{background:var(--ok);}.cw::before{background:var(--wn);}
+.cd::before{background:var(--dn);}.cp::before{background:var(--ac2);}.cg::before{background:var(--bd);}
+.sval{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.slbl{font-size:11px;color:var(--tx2);margin-top:4px;}
+
+/* Chips */
+.chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.cbl{background:var(--acl);color:var(--ac);}.cgr{background:var(--okl);color:var(--ok);}
+.cyl{background:var(--wnl);color:var(--wn);}.crd{background:var(--dnl);color:var(--dn);}
+.cpr{background:#f5f3ff;color:var(--ac2);}.cgy{background:var(--sf3);color:var(--tx2);}
+
+/* Info boxes */
+.info{border-radius:var(--rs);padding:11px 13px;font-size:12.5px;border:1px solid;margin-bottom:10px;line-height:1.5;}
+.ibl{background:var(--acl);border-color:rgba(37,99,235,.2);color:#1e40af;}
+.iyl{background:var(--wnl);border-color:rgba(217,119,6,.2);color:#92400e;}
+.igr{background:var(--okl);border-color:rgba(22,163,74,.2);color:#166534;}
+.ird{background:var(--dnl);border-color:rgba(220,38,38,.2);color:#991b1b;}
+code{background:var(--sf2);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:12px;color:var(--ac);}
+
+/* Tables */
+.tbw{overflow-x:auto;border-radius:var(--rs);border:1px solid var(--bd);}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:360px;}
+th{background:var(--sf2);padding:8px 11px;text-align:left;font-size:11px;font-weight:700;color:var(--tx2);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px;}
+td{padding:8px 11px;border-top:1px solid var(--bd);vertical-align:middle;}
+tr:hover td{background:rgba(37,99,235,.025);}
+.tdc{font-weight:700;font-family:monospace;font-size:12px;}
+.vp{color:var(--ok);font-weight:700;}.vn{color:var(--dn);font-weight:700;}.vz{color:var(--tx3);}
+
+/* Search */
+.sw{position:relative;flex:1;}
+.sw svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--tx3);pointer-events:none;}
+.sinp{width:100%;background:var(--sf);border:1.5px solid var(--bd);border-radius:var(--rs);padding:8px 12px 8px 32px;color:var(--tx);font-size:13px;outline:none;}
+.sinp:focus{border-color:var(--ac);}
+.srow{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
+
+/* Filter chips */
+.fcs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;}
+.fc{flex-shrink:0;padding:5px 13px;border-radius:20px;border:1.5px solid var(--bd);background:var(--sf);color:var(--tx2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
+.fc.on{background:var(--ac);color:#fff;border-color:var(--ac);}
+.fc:hover:not(.on){border-color:var(--ac);color:var(--ac);}
+
+/* Scan */
+.scanbox{background:var(--sf2);border:2px dashed var(--bd);border-radius:var(--r);padding:18px;text-align:center;margin-bottom:12px;}
+.scancode{width:100%;background:var(--sf);border:2px solid var(--ac);border-radius:var(--rs);padding:12px 15px;color:var(--tx);font-size:18px;font-weight:700;letter-spacing:3px;text-align:center;outline:none;font-family:monospace;}
+.scancode:focus{box-shadow:0 0 0 3px rgba(37,99,235,.15);}
+
+/* PI items */
+.pirow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:9px 10px;background:var(--sf2);border-radius:var(--rs);margin-bottom:5px;border:1px solid transparent;}
+.pirow:hover{border-color:var(--bd);}
+.picode{font-weight:700;font-size:13px;font-family:monospace;}
+.pimeta{font-size:11px;color:var(--tx2);margin-top:2px;}
+.qinp{width:60px;background:var(--sf);border:1.5px solid var(--bd);border-radius:6px;padding:5px 7px;text-align:center;font-size:14px;font-weight:700;outline:none;}
+.qinp:focus{border-color:var(--ac);}
+.dbtn{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:17px;padding:3px;border-radius:4px;}
+.dbtn:hover{color:var(--dn);background:var(--dnl);}
+
+/* Progress */
+.pgw{background:var(--sf3);border-radius:20px;height:7px;overflow:hidden;margin-top:5px;}
+.pgb{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--ac),var(--ac2));transition:width .4s;}
+
+/* Variance bar */
+.vbar{border-radius:var(--rs);padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;border-left:4px solid;}
+.vhi{border-color:var(--dn);background:var(--dnl);}.vme{border-color:var(--wn);background:var(--wnl);}.vlo{border-color:var(--ok);background:var(--okl);}
+
+/* List item */
+.li{padding:11px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:border-color .15s;}
+.li:hover{border-color:var(--ac);}
+
+/* Barcode labels */
+.bcg{display:grid;grid-template-columns:repeat(auto-fill,133px);gap:5px;padding:10px;background:#fff;border-radius:8px;}
+.bcl{display:flex;flex-direction:column;align-items:center;width:133px;height:76px;border:1px solid #aaa;padding:3px 2px 2px;overflow:hidden;background:#fff;}
+.bcl .lb{font-size:8px;font-weight:900;color:#000;font-family:Arial,sans-serif;}
+.bcl .li2{font-size:6.5px;color:#333;font-family:Arial,sans-serif;}
+.bcl svg{width:100% !important;height:34px !important;}
+.bcl .lc{font-size:7.5px;color:#000;font-family:'Courier New',monospace;margin-top:1px;}
+
+/* Modal */
+.ovl{display:none;position:fixed;inset:0;background:rgba(17,24,39,.5);z-index:300;align-items:center;justify-content:center;padding:14px;backdrop-filter:blur(2px);}
+.ovl.open{display:flex;}
+.modal{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);}
+.modal h3{font-size:15px;font-weight:800;margin-bottom:14px;}
+.mfoot{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap;}
+.dvd{border:none;border-top:1px solid var(--bd);margin:11px 0;}
+
+/* Toast */
+#toast{position:fixed;bottom:68px;left:50%;transform:translateX(-50%);z-index:999;pointer-events:none;display:flex;flex-direction:column;gap:5px;align-items:center;}
+.tm{background:rgba(17,24,39,.9);color:#fff;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:500;box-shadow:var(--sh);animation:tin .2s ease;white-space:nowrap;}
+.tm.ok{background:rgba(22,163,74,.95);}.tm.err{background:rgba(220,38,38,.95);}
+@keyframes tin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* Loader */
+.spin{width:18px;height:18px;border:2.5px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:sp .6s linear infinite;display:inline-block;}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loader{position:fixed;inset:0;background:rgba(255,255,255,.85);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;font-size:13px;color:var(--tx2);}
+#loader.hide{display:none;}
+
+/* Auth */
+#authWrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,#eff6ff,#f5f3ff);}
+.alg{text-align:center;margin-bottom:24px;}
+.aico{width:54px;height:54px;background:var(--ac);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 14px rgba(37,99,235,.3);}
+.alg h1{font-size:18px;font-weight:800;margin-top:10px;letter-spacing:-.4px;}
+.alg p{font-size:12px;color:var(--tx2);margin-top:2px;}
+.acard{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:26px;width:100%;max-width:380px;box-shadow:var(--sh);}
+.acard h2{font-size:17px;font-weight:700;margin-bottom:3px;}
+.acard .sub{font-size:12px;color:var(--tx2);margin-bottom:20px;}
+
+/* Setup */
+#setupWrap{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,#eff6ff,#f5f3ff);}
+.scard2{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:520px;box-shadow:var(--sh);}
+.scard2 h2{font-size:17px;font-weight:800;margin-bottom:4px;}
+.scard2 .sub{font-size:12px;color:var(--tx2);margin-bottom:16px;}
+.cstep{display:flex;align-items:flex-start;gap:12px;padding:11px;background:var(--sf2);border-radius:var(--rs);margin-bottom:8px;}
+.cnum{width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.cstep p{font-size:12px;color:var(--tx2);line-height:1.5;margin-top:2px;}
+
+/* App shell */
+#appShell{display:none;flex-direction:column;min-height:100vh;}
+.tbar{background:var(--sf);border-bottom:1.5px solid var(--bd);padding:0 14px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shs);}
+.tbl{display:flex;align-items:center;gap:9px;}
+.tlogo{width:28px;height:28px;background:var(--ac);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;}
+.ttl{font-weight:700;font-size:14px;}
+.tbr{display:flex;align-items:center;gap:7px;}
+.upill{display:flex;align-items:center;gap:7px;background:var(--sf2);border:1px solid var(--bd);border-radius:20px;padding:3px 10px 3px 3px;}
+.uav{width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.uav.adm{background:var(--ac2);}
+.uname{font-size:12px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.obtn{background:none;border:none;cursor:pointer;color:var(--tx2);font-size:17px;padding:4px;border-radius:5px;}
+.obtn:hover{background:var(--dnl);color:var(--dn);}
+#offB{display:none;background:var(--wn);color:#fff;font-size:12px;font-weight:600;text-align:center;padding:5px;}
+
+/* Layout */
+.lay{flex:1;display:flex;overflow:hidden;}
+.sbar{display:none;width:210px;background:var(--sf);border-right:1.5px solid var(--bd);padding:14px 10px;flex-direction:column;gap:2px;flex-shrink:0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
+@media(min-width:768px){.sbar{display:flex;}.ms{padding-bottom:20px !important;}.bnav{display:none !important;}}
+.nsec{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;padding:8px 10px 4px;}
+.nbtn{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--rs);cursor:pointer;color:var(--tx2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nbtn:hover{background:var(--sf2);color:var(--tx);}
+.nbtn.on{background:var(--acl);color:var(--ac);font-weight:700;}
+.nbtn svg{width:17px;height:17px;flex-shrink:0;}
+.mw{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.ms{flex:1;overflow-y:auto;padding:14px;padding-bottom:70px;}
+.mxw{max-width:700px;margin:0 auto;width:100%;}
+
+/* Section header */
+.shd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.shd h2{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.shd .acts{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* Sections */
+.section{display:none;}.section.on{display:block;}
+
+/* Bottom nav */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:1.5px solid var(--bd);display:flex;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,.05);}
+.nbb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 4px;cursor:pointer;color:var(--tx3);border:none;background:none;font-size:10px;font-weight:500;gap:3px;transition:color .15s;min-height:54px;}
+.nbb.on{color:var(--ac);}
+.nbb svg{width:21px;height:21px;}
+
+/* Week badge */
+.wbg{background:var(--acl);color:var(--ac);border:1px solid rgba(37,99,235,.2);border-radius:20px;padding:3px 11px;font-size:11px;font-weight:600;}
+
+/* User rows */
+.urow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--sf2);border-radius:var(--rs);margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+.urinfo{flex:1;min-width:0;}
+.uracts{display:flex;gap:5px;flex-shrink:0;}
+
+/* Approval row */
+.aprow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--sf2);border-radius:var(--rs);margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+
+/* Drop zone */
+.dzn{border:2px dashed var(--bd);border-radius:var(--rs);padding:26px;text-align:center;cursor:pointer;transition:border-color .2s;}
+.dzn:hover,.dzn.drag{border-color:var(--ac);background:var(--acl);}
+
+/* Photo */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;}
+.pthumb{text-align:center;}
+.pthumb img{width:100%;height:68px;object-fit:cover;border-radius:6px;cursor:pointer;}
+.pthumb .pc{font-size:10px;margin-top:2px;font-weight:600;}
+
+/* Camera */
+#qr-reader{width:100%;border-radius:8px;overflow:hidden;background:#000;min-height:200px;}
+#qr-reader video{width:100% !important;border-radius:8px;}
+
+/* Print */
+@media print{body,#appShell,#authWrap,#setupWrap{display:none !important;}#printArea{display:block !important;}}
+#printArea{display:none;}
 </style>
 </head>
 <body>
-<!-- SYNC STATUS BADGE (added) -->
-<div id="sync-status" class="hidden"><span class="dot"></span><span id="sync-status-text">Online</span></div>
 
-<!-- LOGIN -->
-<div class="screen active" id="s-login">
-  <div class="app-header" style="padding-bottom:40px;">
-    <div class="hd-brand">KIDZA</div>
-    <div class="hd-sub">Staff Training Portal</div>
-  </div>
-  <div class="card" style="margin-top:-24px;position:relative;z-index:2;">
-    <div class="ctr mb2"><div class="pg-title">Welcome Back</div><div class="pg-sub">Sign in to continue your training</div></div>
-    <div class="iw"><span class="lbl">Username</span><input id="l-user" type="text" placeholder="Enter username" autocomplete="username"></div>
-    <div class="iw"><span class="lbl">Password</span><input id="l-pass" type="password" placeholder="Enter password" autocomplete="current-password"></div>
-    <div class="iw" style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" id="l-rem" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--blue);">
-      <label for="l-rem" style="font-size:13px;color:var(--mid);cursor:pointer;">Remember me on this device</label>
+<div id="loader"><div class="spin"></div><span id="ltxt">Starting…</span></div>
+<div id="printArea"></div>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="setupWrap">
+  <div class="scard2">
+    <h2>⚙️ Quick Setup — 3 Steps</h2>
+    <p class="sub">Open this HTML file in a text editor and fill in your Firebase details at the top.</p>
+    <div class="cstep"><div class="cnum">1</div><div><b>Get Firebase Config</b>
+      <p>Go to <b>console.firebase.google.com</b> → Your Project → ⚙️ Project Settings → Your Apps → Web App → Copy the <code>firebaseConfig</code> values and paste them in the <b>FIREBASE_CONFIG</b> block at the top of this HTML file.</p></div></div>
+    <div class="cstep"><div class="cnum">2</div><div><b>Enable Realtime Database</b>
+      <p>Firebase Console → Build → Realtime Database → Create Database → <b>Start in test mode</b> → Choose region → Enable.</p></div></div>
+    <div class="cstep"><div class="cnum">3</div><div><b>Enable Storage</b>
+      <p>Firebase Console → Build → Storage → Get started → Production mode → Done. (Required for recount photos.)</p></div></div>
+    <div class="cstep"><div class="cnum">4</div><div><b>Deploy to GitHub Pages</b>
+      <p>Rename file to <code>index.html</code> → push to GitHub repo → Settings → Pages → Deploy from main branch. The live URL is your app URL.</p></div></div>
+    <div class="info iyl" style="margin-top:10px;">
+      💡 After setup, first login: username <b>admin</b> · password <b>admin123</b><br>
+      Change these from <b>Admin → Manage Users → My Credentials</b> inside the app.
     </div>
-    <div id="l-err" class="alert al-err hidden"></div>
-    <button class="btn btn-blue btn-full" onclick="doLogin()">Sign In</button>
-    <p class="ctr muted mt1" style="font-size:12px;">Contact admin if you forgot credentials</p>
+    <button class="btn bp bfl" style="margin-top:12px;" onclick="location.reload()">↺ Retry After Setup</button>
   </div>
 </div>
 
-<!-- HOME -->
-<div class="screen" id="s-home">
-  <div class="app-header">
-    <div class="hd-row">
-      <div><div class="hd-brand">KIDZA</div><div class="hd-sub" id="h-sub">Staff Portal</div></div>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+<!-- ══ AUTH SCREEN ══ -->
+<div id="authWrap">
+  <div class="alg">
+    <div class="aico">📦</div>
+    <h1>Inventory Management</h1>
+    <p>System</p>
+  </div>
+  <div class="acard">
+    <h2>Sign In</h2>
+    <p class="sub">Enter your username and password</p>
+    <div class="field">
+      <label>Username</label>
+      <input class="inp" type="text" id="lgU" placeholder="e.g.  admin  or  kattur"
+        autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter')document.getElementById('lgP').focus()">
     </div>
-  </div>
-  <div id="notif-area"></div>
-  <div class="card" style="margin-top:-14px;position:relative;z-index:2;">
-    <div class="stat-grid" id="home-stats"></div>
-  </div>
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div class="pg-title" style="font-size:18px;margin:0;">My Courses</div>
+    <div class="field">
+      <label>Password</label>
+      <div class="inpw">
+        <input class="inp" type="password" id="lgP" placeholder="••••••••"
+          autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="eye" onclick="eyeToggle('lgP',this)">👁</button>
+      </div>
     </div>
-    <div id="home-courses"></div>
-  </div>
-  <div class="card">
-    <button class="btn btn-outline btn-full" onclick="goLb()">🏆 Leaderboard</button>
-  </div>
-  <div class="sp"></div>
-</div>
-
-<!-- COURSE DETAIL -->
-<div class="screen" id="s-course">
-  <div class="back-bar"><button class="back-btn" onclick="navBack()">&#8592;</button><span class="back-title" id="cd-bar">Course</span></div>
-  <div class="sp"></div>
-  <div class="card">
-    <div class="pg-title mb1" id="cd-name"></div>
-    <div class="pg-sub mb2" id="cd-desc"></div>
-    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;color:var(--mid);margin-bottom:10px;">STUDY MATERIALS</div>
-    <div id="cd-mats"></div>
-    <div class="sep"></div>
-    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;color:var(--mid);margin-bottom:10px;">QUIZ</div>
-    <div id="cd-quiz"></div>
-  </div>
-  <div class="sp"></div>
-</div>
-
-<!-- QUIZ TYPE -->
-<div class="screen" id="s-qtype">
-  <div class="back-bar"><button class="back-btn" onclick="navBack()">&#8592;</button><span class="back-title">Select Quiz Mode</span></div>
-  <div class="sp"></div>
-  <div class="card">
-    <div class="pg-title mb1">Choose Quiz Mode</div>
-    <div class="pg-sub mb2" id="qt-cname"></div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Knowledge</div>
-    <div class="qtype-card" onclick="openInst('knowledge')">
-      <div class="qtype-icon qtk">&#129504;</div>
-      <div><div class="qtype-title">Knowledge Quiz</div><div class="qtype-desc">Standard — focus on accuracy</div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:12px;">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--tx2);">
+        <input type="checkbox" id="remMe" style="accent-color:var(--ac)"> Remember me
+      </label>
     </div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-top:14px;margin-bottom:8px;">Speed</div>
-    <div class="qtype-card" style="opacity:.45;pointer-events:none;">
-      <div class="qtype-icon qts">&#9889;</div>
-      <div><div class="qtype-title">Speed Quiz</div><div class="qtype-desc">Coming soon</div></div>
+    <button class="btn bp bfl" id="lgBtn" onclick="doLogin()">Sign In →</button>
+    <div id="lgErr" style="color:var(--dn);font-size:12px;margin-top:9px;display:none;text-align:center;"></div>
+    <div style="font-size:11px;color:var(--tx3);text-align:center;margin-top:14px;">
+      Default: <b>admin</b> / <b>admin123</b>
     </div>
-    <div class="alert al-info mt2" id="qt-info"></div>
   </div>
 </div>
 
-<!-- INSTRUCTIONS -->
-<div class="screen" id="s-inst">
-  <div class="back-bar"><button class="back-btn" onclick="showScreen('s-qtype')">&#8592;</button><span class="back-title">Instructions</span></div>
-  <div class="sp"></div>
-  <div class="card">
-    <div class="ctr mb2"><div style="font-size:48px;">&#128203;</div><div class="pg-title mt1" id="inst-ttl"></div><div class="pg-sub" id="inst-sub"></div></div>
-    <div id="inst-list"></div>
-    <div id="inst-warn" class="hidden mt1"></div>
-    <button class="btn btn-blue btn-full mt2" onclick="startQuiz()">Start Quiz</button>
-    <button class="btn btn-outline btn-full mt1" onclick="showScreen('s-qtype')">Back</button>
-  </div>
-  <div class="sp"></div>
-</div>
-
-<!-- QUIZ -->
-<div class="screen" id="s-quiz">
-  <div class="app-header" style="padding:44px 20px 20px;">
-    <div class="hd-row">
-      <div><div style="font-size:12px;color:rgba(255,255,255,.65);">Staff</div><div style="font-family:var(--display);font-weight:700;color:#fff;font-size:16px;" id="qz-name"></div></div>
-      <div class="timer-pill" id="qz-timer">&#9201; <span id="qz-tsec">30</span>s</div>
+<!-- ══ APP SHELL ══ -->
+<div id="appShell">
+  <div id="offB">⚠️ Offline — changes sync when reconnected</div>
+  <div class="tbar">
+    <div class="tbl">
+      <div class="tlogo">📦</div>
+      <div class="ttl">Inventory Management</div>
+    </div>
+    <div class="tbr">
+      <div class="upill">
+        <div class="uav" id="uAv">U</div>
+        <span class="uname" id="uNm"></span>
+      </div>
+      <button class="obtn" onclick="doLogout()" title="Logout">⏻</button>
     </div>
   </div>
-  <div class="card" style="margin-top:-14px;position:relative;z-index:2;">
-    <div class="prog-bar"><div class="prog-fill" id="qz-prog"></div></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <b id="qz-cnt" style="font-size:13px;color:var(--mid);"></b>
-      <div class="pip-row" id="qz-pips"></div>
-    </div>
-    <div style="font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:18px;line-height:1.5;" id="qz-q"></div>
-    <div id="qz-opts"></div>
-    <button class="btn btn-blue btn-full mt2 hidden" id="qz-next" onclick="nextQ()">Next</button>
-  </div>
-</div>
 
-<!-- RESULT -->
-<div class="screen" id="s-result">
-  <div class="back-bar"><button class="back-btn" onclick="goHomeFromResult()">&#8592;</button><span class="back-title">Results</span></div>
-  <div class="sp"></div>
-  <div class="card ctr">
-    <div class="pg-title mb1" id="res-hd">Quiz Complete</div>
-    <div class="score-ring"><h1 id="res-sc">0</h1><small id="res-tot">/ 0</small></div>
-    <div class="mb1">Percentage: <b style="color:var(--blue);" id="res-pct"></b></div>
-    <div class="mb1" id="res-status"></div>
-    <div style="font-size:12px;color:var(--muted);" id="res-rem"></div>
-  </div>
-  <div class="card">
-    <div class="pg-title mb2" style="font-size:16px;">Answer Review</div>
-    <div id="res-review"></div>
-  </div>
-  <div class="card"><button class="btn btn-blue btn-full" onclick="goHomeFromResult()">Back to Home</button></div>
-  <div class="sp"></div>
-</div>
+  <div class="lay">
+    <!-- Sidebar -->
+    <nav class="sbar" id="sidebar">
+      <div class="nsec">Main</div>
+      <button class="nbtn on" onclick="goSec('dashboard',this)" data-s="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
+      <button class="nbtn" onclick="goSec('soh',this)" data-s="soh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Stock Lookup</button>
+      <button class="nbtn" onclick="goSec('pi',this)" data-s="pi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Physical Inventory</button>
+      <button class="nbtn" onclick="goSec('history',this)" data-s="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>PI History</button>
+      <button class="nbtn" onclick="goSec('barcode',this)" data-s="barcode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v3M7 5v3M13 5v3M17 5v3M21 5v3M3 16v3M7 16v3M13 16v3M17 16v3M21 16v3M3 9h4M17 9h4M3 12h18"/></svg>Barcode Labels</button>
+      <div class="nsec admEl" style="display:none">Admin</div>
+      <button class="nbtn admEl" style="display:none" onclick="goSec('users',this)" data-s="users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.87"/></svg>Manage Users</button>
+      <button class="nbtn admEl" style="display:none" onclick="goSec('upload',this)" data-s="upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Data Upload</button>
+    </nav>
 
-<!-- LEADERBOARD -->
-<div class="screen" id="s-lb">
-  <div class="back-bar"><button class="back-btn" onclick="navBack()">&#8592;</button><span class="back-title">Leaderboard</span></div>
-  <div class="sp"></div>
-  <div class="card">
-    <div class="tabs" id="lb-tabs">
-      <button class="tab-btn active" onclick="switchLbTab('all')">All Staff</button>
-      <button class="tab-btn" onclick="switchLbTab('course')">By Course</button>
-    </div>
-    <div id="lb-cfilter" class="hidden mb2">
-      <select id="lb-csel" onchange="renderLb()"><option value="">All Courses</option></select>
-    </div>
-    <div id="lb-list"></div>
-  </div>
-  <div class="sp"></div>
-</div>
+    <div class="mw">
+      <div class="ms">
+        <div class="mxw">
 
-<!-- MATERIAL VIEWER -->
-<div class="screen" id="s-mat">
-  <div class="back-bar"><button class="back-btn" onclick="backFromMat()">&#8592;</button><span class="back-title" id="mat-bar">Material</span></div>
-  <div class="sp"></div>
-  <div class="card">
-    <div id="mat-content"></div>
-    <div class="mt2" id="mat-done-area"></div>
-  </div>
-  <div class="sp"></div>
-</div>
+          <!-- ══ DASHBOARD ══ -->
+          <div id="sec-dashboard" class="section on">
+            <div id="sDash">
+              <div class="shd"><h2>📊 Dashboard</h2><span id="swBadge" class="wbg"></span></div>
+              <div class="sgrid">
+                <div class="scard ca"><div class="sval" id="s1">—</div><div class="slbl">📌 PI This Week</div></div>
+                <div class="scard co"><div class="sval" id="s2">0</div><div class="slbl">✅ Items Counted</div></div>
+                <div class="scard cd"><div class="sval" id="s3">0</div><div class="slbl">⚠️ Variance Items</div></div>
+                <div class="scard cp"><div class="sval" id="s4">0</div><div class="slbl">🔄 Recount Pending</div></div>
+                <div class="scard cw"><div class="sval" id="s5">0</div><div class="slbl">📁 Total PI Records</div></div>
+                <div class="scard cg"><div class="sval" id="s6">—</div><div class="slbl">📅 Status</div></div>
+              </div>
+              <div class="card"><div class="cttl">Quick Actions</div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                  <button class="btn bp bsm" onclick="goSec('pi',null)">📋 Open PI</button>
+                  <button class="btn bsc bsm" onclick="goSec('soh',null)">🔍 Stock Lookup</button>
+                  <button class="btn bsc bsm" onclick="goSec('history',null)">📁 History</button>
+                  <button class="btn bsc bsm" onclick="goSec('barcode',null)">🏷 Barcodes</button>
+                </div>
+              </div>
+            </div>
+            <div id="aDash" style="display:none">
+              <div class="shd"><h2>⚙️ Admin Dashboard</h2><span id="awBadge" class="wbg"></span></div>
+              <div class="sgrid">
+                <div class="scard ca"><div class="sval" id="a1">—</div><div class="slbl">🏪 Stores</div></div>
+                <div class="scard co"><div class="sval" id="a2">0</div><div class="slbl">✅ PIs This Week</div></div>
+                <div class="scard cw"><div class="sval" id="a3">—</div><div class="slbl">📊 Week Variance%</div></div>
+                <div class="scard cd"><div class="sval" id="a4">—</div><div class="slbl">📈 Month Variance%</div></div>
+                <div class="scard cp"><div class="sval" id="a5">0</div><div class="slbl">🔄 Recount Requests</div></div>
+                <div class="scard cg"><div class="sval" id="a6">0</div><div class="slbl">⏳ Approvals Pending</div></div>
+              </div>
+              <div class="card">
+                <div class="ctrow"><span class="cttl" style="margin:0">⚠️ Top Variance Stores — This Week</span></div>
+                <div id="aTopV"><div style="color:var(--tx2);font-size:12px">No submissions this week</div></div>
+              </div>
+              <div class="card"><div class="cttl">📊 Variance Trend — Last 4 Weeks</div><div id="aTrend" style="font-size:12px;color:var(--tx2)">No data yet</div></div>
+              <div class="card"><div class="cttl">Quick Actions</div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                  <button class="btn bp bsm" onclick="openAssignPI()">📌 Assign PI</button>
+                  <button class="btn bsc bsm" onclick="goSec('users',null)">👥 Users</button>
+                  <button class="btn bsc bsm" onclick="goSec('upload',null)">⬆ Upload</button>
+                  <button class="btn bsc bsm" onclick="goSec('history',null)">📁 History</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-<!-- ══ ADMIN ══ -->
-<div class="screen" id="s-admin">
-  <div class="app-header">
-    <div class="hd-row">
-      <div><div class="hd-brand">KIDZA Admin</div><div class="hd-sub" id="adm-sub">Management</div></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" id="sync-btn" onclick="syncNow()">↻ Sync</button>
-        <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+          <!-- ══ STOCK LOOKUP ══ -->
+          <div id="sec-soh" class="section">
+            <div class="shd"><h2>📋 Stock Lookup</h2><button class="btn bgh bsm" onclick="openCam('soh')">📷 Scan</button></div>
+            <div class="srow">
+              <div class="sw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input class="sinp" id="sohQ" placeholder="Code, brand, class, department…" oninput="renderSOH()"></div>
+            </div>
+            <div class="fcs" id="sohFCs"></div>
+            <div id="sohTbl"></div>
+            <div id="sohPgr" style="font-size:11px;color:var(--tx2);text-align:right;margin-top:6px;"></div>
+          </div>
+
+          <!-- ══ PHYSICAL INVENTORY ══ -->
+          <div id="sec-pi" class="section">
+            <div class="shd"><h2>🔍 Physical Inventory</h2><span id="piWBg" class="wbg"></span></div>
+            <div id="piBnr" style="display:none"></div>
+            <div id="piNone" style="display:none;text-align:center;padding:40px 20px;color:var(--tx2);">
+              <div style="font-size:40px;margin-bottom:10px">📌</div>
+              <div style="font-weight:700;color:var(--tx);margin-bottom:6px">No PI Assigned</div>
+              <p style="font-size:13px">Admin has not assigned a Physical Inventory for this week yet.</p>
+            </div>
+            <div id="piBody">
+              <div class="card">
+                <div class="ctrow"><span class="cttl" style="margin:0">Scan / Enter Product</span>
+                  <button class="btn bgh bsm" onclick="openCam('pi')">📷 Camera</button></div>
+                <div class="scanbox">
+                  <div style="font-size:26px;margin-bottom:6px">📱</div>
+                  <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Scan barcode or type code then press Enter</p>
+                  <input class="scancode" id="piCode" type="text" placeholder="PRODUCT CODE"
+                    autocomplete="off" inputmode="numeric" spellcheck="false"
+                    oninput="piCodeCh()" onkeydown="if(event.key==='Enter')lookupCode()">
+                </div>
+                <div id="piInfo" style="display:none;background:var(--acl);border:1px solid rgba(37,99,235,.2);border-radius:var(--rs);padding:11px;margin-bottom:10px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;">
+                    <div><span style="color:var(--tx2)">Code:</span> <b id="pic">—</b></div>
+                    <div><span style="color:var(--tx2)">Dept:</span> <b id="pid">—</b></div>
+                    <div><span style="color:var(--tx2)">Class:</span> <b id="picl">—</b></div>
+                    <div><span style="color:var(--tx2)">Brand:</span> <b id="pib">—</b></div>
+                    <div><span style="color:var(--tx2)">MRP:</span> <b id="pim">—</b></div>
+                    <div><span style="color:var(--tx2)">Sys Stock:</span> <b id="pis">—</b></div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-end;">
+                  <div class="field" style="flex:1;margin:0">
+                    <label>Physical Quantity</label>
+                    <input class="inp" type="number" id="piQty" placeholder="Enter qty" min="0"
+                      style="font-size:16px;font-weight:700;"
+                      onkeydown="if(event.key==='Enter')addPI()">
+                  </div>
+                  <button class="btn bp" style="height:42px;" onclick="addPI()">+ Add</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="ctrow">
+                  <span class="cttl" style="margin:0">Counted Items (<span id="piCnt">0</span>)</span>
+                  <button class="btn bxs bsc" onclick="clearPI()">Clear All</button>
+                </div>
+                <div id="piList"><div style="text-align:center;padding:16px;color:var(--tx2);font-size:13px;">No items yet</div></div>
+                <div class="dvd"></div>
+                <button class="btn bok bfl" id="submitPIBtn" disabled onclick="submitPI()">✅ Submit Physical Inventory</button>
+              </div>
+            </div>
+            <div id="rcSec" style="display:none">
+              <div class="card"><div class="cttl">🔄 Recount</div><div id="rcBody"></div></div>
+            </div>
+          </div>
+
+          <!-- ══ HISTORY ══ -->
+          <div id="sec-history" class="section">
+            <div class="shd"><h2>📁 PI History</h2>
+              <div class="acts">
+                <button class="btn bsm bsc" onclick="expHistXLS()">⬇ Excel</button>
+                <button class="btn bsm bsc" onclick="expHistPDF()">⬇ PDF</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <select class="inp" id="hfStore" style="flex:1;min-width:100px;padding:8px 10px;" onchange="renderHist()">
+                <option value="ALL">All Stores</option>
+              </select>
+              <select class="inp" id="hfPer" style="flex:1;min-width:100px;padding:8px 10px;" onchange="hPerCh()">
+                <option value="all">All Time</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            <div id="hDateR" style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+              <input type="date" class="inp" id="hFrom" style="padding:8px 10px;" onchange="renderHist()">
+              <input type="date" class="inp" id="hTo" style="padding:8px 10px;" onchange="renderHist()">
+            </div>
+            <div id="histList"></div>
+          </div>
+
+          <!-- ══ BARCODE GENERATOR ══ -->
+          <div id="sec-barcode" class="section">
+            <div class="shd"><h2>🏷 Barcode Labels</h2></div>
+            <div class="card">
+              <div class="cttl">Generate A4 Label Sheet</div>
+              <div class="field">
+                <label>Product Codes — one per line</label>
+                <textarea class="inp" id="bcIn" rows="5" placeholder="1234&#10;5678&#10;9012"></textarea>
+              </div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                <button class="btn bp" style="flex:1" onclick="genBC()">🔧 Generate</button>
+                <button class="btn bsc" onclick="printBC()">🖨 Print A4</button>
+              </div>
+              <p style="font-size:11px;color:var(--tx2);margin-top:8px;">3.5 × 2.0 cm · CODE128 · KIDZA brand · Class & MRP from SOH</p>
+            </div>
+            <div id="bcWrap" style="display:none">
+              <div class="card">
+                <div class="ctrow"><span class="cttl" style="margin:0">Preview — <span id="bcCnt">0</span> labels</span>
+                  <button class="btn bxs bsc" onclick="clearBC()">Clear</button></div>
+                <div id="bcGrid" class="bcg"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ MANAGE USERS (Admin only) ══ -->
+          <div id="sec-users" class="section">
+            <div class="shd"><h2>👥 Manage Users</h2>
+              <button class="btn bp bsm" onclick="openUM(null)">+ Add User</button>
+            </div>
+            <!-- Change own credentials -->
+            <div class="card">
+              <div class="cttl">🔐 My Credentials</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div class="field" style="margin:0"><label>New Username</label>
+                  <input class="inp" id="myU" placeholder="New username"></div>
+                <div class="field" style="margin:0"><label>New Password</label>
+                  <input class="inp" type="password" id="myP" placeholder="New password"></div>
+              </div>
+              <button class="btn bp bsm" onclick="changeMyCredentials()">💾 Save My Credentials</button>
+            </div>
+            <!-- Assign PI -->
+            <div class="card">
+              <div class="cttl">📌 Assign Weekly Physical Inventory</div>
+              <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+                <div class="field" style="flex:1;margin:0;min-width:140px;"><label>Week</label>
+                  <input type="week" class="inp" id="aWeek" style="padding:9px 12px;"></div>
+                <button class="btn bp" style="height:42px;" onclick="openAssignPI()">📌 Assign</button>
+              </div>
+            </div>
+            <!-- Recount approvals -->
+            <div class="card">
+              <div class="cttl">📷 Recount Approval Requests</div>
+              <div id="rcApprovals"><div style="color:var(--tx2);font-size:12px;">No pending requests</div></div>
+            </div>
+            <!-- Users list -->
+            <div class="card">
+              <div class="cttl">All Users</div>
+              <div id="userList"><div style="text-align:center;padding:20px;"><div class="spin"></div></div></div>
+            </div>
+          </div>
+
+          <!-- ══ DATA UPLOAD (Admin only) ══ -->
+          <div id="sec-upload" class="section">
+            <div class="shd"><h2>⬆ Data Upload</h2></div>
+            <div class="card">
+              <div class="cttl">📋 Stock on Hand (SOH) CSV</div>
+              <div class="info ibl" style="margin-bottom:12px;">
+                Columns: <code>StoreName</code> <code>Concatinate</code> <code>Department</code> <code>Class</code> <code>Brand</code> <code>MRP</code> <code>SOH</code> <code>ProductCode</code><br>
+                <small>Concatinate = StoreName+ProductCode &nbsp;e.g. <code>Kattur1234</code></small>
+              </div>
+              <div class="dzn" id="dzn" onclick="document.getElementById('csvF').click()">
+                <div style="font-size:30px;margin-bottom:7px;">📁</div>
+                <div style="font-weight:600;margin-bottom:3px;">Click or drag CSV here</div>
+                <div style="font-size:12px;color:var(--tx2);">.csv files only</div>
+              </div>
+              <input type="file" id="csvF" accept=".csv" style="display:none" onchange="handleCSV(event)">
+              <div id="csvSt" style="margin-top:8px;"></div>
+            </div>
+            <div class="card">
+              <div class="cttl">🔗 Google Sheet Sync</div>
+              <div class="info iyl">Publish as CSV: <b>File → Share → Publish to web → CSV</b> → paste URL below</div>
+              <div class="field" style="margin-top:10px;"><label>Published CSV URL</label>
+                <input class="inp" type="url" id="gsUrl" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv"></div>
+              <div style="display:flex;gap:7px;">
+                <button class="btn bp bsm" onclick="syncGS()">🔄 Sync Now</button>
+                <button class="btn bsc bsm" onclick="saveGSUrl()">💾 Save URL</button>
+              </div>
+              <div id="gsSt" style="margin-top:7px;font-size:12px;color:var(--tx2);"></div>
+            </div>
+            <div class="card">
+              <div class="cttl">📂 Uploaded Files</div>
+              <div id="fileList"><div style="color:var(--tx2);font-size:13px;">No files yet</div></div>
+              <div class="dvd"></div>
+              <button class="btn bdn bsm" onclick="delAllSOH()">🗑 Delete All SOH Data</button>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
-  <div class="card" style="margin-top:-14px;position:relative;z-index:2;">
-    <div class="tabs" id="adm-tabs">
-      <button class="tab-btn active" onclick="admTab('ov')">Overview</button>
-      <button class="tab-btn" onclick="admTab('co')">Courses</button>
-      <button class="tab-btn" onclick="admTab('us')">Users</button>
-      <button class="tab-btn" onclick="admTab('re')">Results</button>
-    </div>
-    <!-- OVERVIEW -->
-    <div id="adm-ov">
-      <div class="stat-grid mb2" id="adm-stats"></div>
-      <div class="mb2"><div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">SCORE DISTRIBUTION</div><div class="chart-wrap"><canvas id="ch-sc"></canvas></div></div>
-      <div class="mb2"><div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">PASS / FAIL</div><div class="chart-wrap" style="height:170px;"><canvas id="ch-pf"></canvas></div></div>
-      <div><div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">COMPLETION %</div><div class="chart-wrap"><canvas id="ch-cp"></canvas></div></div>
-    </div>
-    <!-- COURSES -->
-    <div id="adm-co" class="hidden">
-      <button class="btn btn-blue btn-full mb2" onclick="openCModal(null)">+ New Course</button>
-      <div id="adm-co-list"></div>
-    </div>
-    <!-- USERS -->
-    <div id="adm-us" class="hidden">
-      <button class="btn btn-blue btn-full mb2" onclick="openUModal(null)">+ New User</button>
-      <div id="adm-us-list"></div>
-    </div>
-    <!-- RESULTS -->
-    <div id="adm-re" class="hidden">
-      <div class="row mb2">
-        <button class="btn btn-success btn-sm" onclick="exportCSV()">Export CSV</button>
-        <select id="adm-fc" onchange="renderAdmRe()" style="flex:1;font-size:13px;padding:9px 10px;"></select>
-      </div>
-      <div class="tbl-wrap mb2">
-        <table>
-          <thead><tr><th>#</th><th>Name</th><th>Course</th><th>Score</th><th>Mode</th><th>Status</th><th>Act</th></tr></thead>
-          <tbody id="adm-re-body"></tbody>
-        </table>
-      </div>
-      <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">LEADERBOARD</div>
-      <div id="adm-lb"></div>
-    </div>
-  </div>
-  <div class="sp"></div>
+
+  <!-- Bottom Nav -->
+  <nav class="bnav">
+    <button class="nbb on" onclick="goSec('dashboard',this)" data-s="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
+    <button class="nbb" onclick="goSec('soh',this)" data-s="soh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Stock</button>
+    <button class="nbb" onclick="goSec('pi',this)" data-s="pi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>PI</button>
+    <button class="nbb" onclick="goSec('history',this)" data-s="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>History</button>
+    <button class="nbb" onclick="goSec('barcode',this)" data-s="barcode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v3M7 5v3M13 5v3M17 5v3M21 5v3M3 16v3M7 16v3M13 16v3M17 16v3M21 16v3M3 9h4M17 9h4M3 12h18"/></svg>Labels</button>
+  </nav>
 </div>
 
-<!-- COURSE MODAL -->
-<div class="modal-ov hidden" id="m-co">
-  <div class="modal-box">
-    <div class="modal-hnd"></div>
-    <div class="modal-ttl" id="m-co-ttl">New Course</div>
-    <div class="iw"><span class="lbl">Course Name</span><input id="mc-n" placeholder="Course name"></div>
-    <div class="iw"><span class="lbl">Description</span><textarea id="mc-d" placeholder="Brief description..."></textarea></div>
-    <div class="row mb2" style="flex-wrap:wrap;gap:10px;">
-      <div style="flex:1;min-width:80px;"><span class="lbl">Pass %</span><input type="number" id="mc-p" value="60" min="1" max="100"></div>
-      <div style="flex:1;min-width:80px;"><span class="lbl">Timer K (s)</span><input type="number" id="mc-tk" value="30" min="5"></div>
-      <div style="flex:1;min-width:80px;"><span class="lbl">Timer S (s)</span><input type="number" id="mc-ts" value="10" min="3"></div>
-    </div>
-    <div class="sep"></div>
-    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Materials</div>
-    <div id="mc-mats"></div>
-    <button class="btn btn-outline btn-full btn-sm mb2" onclick="addMat()">+ Add Material</button>
-    <div class="sep"></div>
-    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Questions</div>
-    <div id="mc-qs"></div>
-    <button class="btn btn-outline btn-full btn-sm mb2" onclick="addQ()">+ Add Question</button>
-    <div class="sep"></div>
-    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Assign to Users</div>
-    <div id="mc-asgn"></div>
-    <div class="row mt2">
-      <button class="btn btn-blue btn-full" onclick="saveCourse()">Save Course</button>
-      <button class="btn btn-outline btn-full" onclick="closeM('m-co')">Cancel</button>
+<!-- MODALS -->
+<div class="ovl" id="camOvl">
+  <div class="modal" style="max-width:400px;">
+    <h3>📷 Barcode Scanner</h3>
+    <div id="qr-reader"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn bsc bsm" onclick="flipCam()">🔄 Flip</button>
+      <button class="btn bdn bsm" style="margin-left:auto" onclick="stopCam()">✕ Close</button>
     </div>
   </div>
 </div>
 
-<!-- USER MODAL -->
-<div class="modal-ov hidden" id="m-us">
-  <div class="modal-box">
-    <div class="modal-hnd"></div>
-    <div class="modal-ttl" id="m-us-ttl">New User</div>
-    <div class="iw"><span class="lbl">Full Name</span><input id="mu-n" placeholder="Full name"></div>
-    <div class="iw"><span class="lbl">Username</span><input id="mu-u" placeholder="login username (no spaces)"></div>
-    <div class="iw"><span class="lbl">Password</span><input type="password" id="mu-p" placeholder="password"></div>
-    <div class="iw"><span class="lbl">Role</span><select id="mu-r"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
-    <div id="mu-err" class="alert al-err hidden"></div>
-    <div class="row mt2">
-      <button class="btn btn-blue btn-full" onclick="saveUser()">Save User</button>
-      <button class="btn btn-outline btn-full" onclick="closeM('m-us')">Cancel</button>
+<div class="ovl" id="piResOvl">
+  <div class="modal"><h3>📊 Variance Report</h3>
+    <div id="piResBody"></div>
+    <div class="mfoot">
+      <button class="btn bsc" onclick="closeO('piResOvl')">Close</button>
+      <button class="btn bsc bsm" onclick="expVarXLS()">⬇ Excel</button>
+      <button class="btn bp bsm" onclick="expVarPDF()">⬇ PDF</button>
     </div>
   </div>
 </div>
 
-<!-- CONGRATS -->
-<div id="cg-ov" class="hidden">
-  <div class="cg-ov">
-    <div class="cg-box" id="cg-box">
-      <span class="cg-emoji" id="cg-em">&#127881;</span>
-      <div style="font-family:var(--display);font-size:22px;font-weight:800;margin:12px 0 6px;" id="cg-ttl">Congratulations!</div>
-      <div style="color:var(--muted);font-size:14px;margin-bottom:16px;" id="cg-msg"></div>
-      <div class="score-ring" style="width:110px;height:110px;border-width:4px;margin:0 auto 16px;">
-        <h1 style="font-size:36px;" id="cg-sc">0</h1><small id="cg-tot">/ 0</small>
-      </div>
-      <button class="btn btn-blue btn-full" onclick="closeCg()">View Details</button>
+<div class="ovl" id="histOvl">
+  <div class="modal"><h3 id="histOvlTitle">PI Details</h3>
+    <div id="histOvlBody"></div>
+    <div class="mfoot">
+      <button class="btn bsc" onclick="closeO('histOvl')">Close</button>
+      <button class="btn bsc bsm" onclick="expDetXLS()">⬇ Excel</button>
+      <button class="btn bp bsm" onclick="expDetPDF()">⬇ PDF</button>
     </div>
   </div>
 </div>
+
+<div class="ovl" id="assignOvl">
+  <div class="modal" style="max-width:420px;">
+    <h3>📌 Assign Physical Inventory</h3>
+    <div class="field"><label>Week</label>
+      <input type="week" class="inp" id="assignWk" style="padding:10px 12px;"></div>
+    <div class="field"><label>Select Stores</label>
+      <div id="assignSts" style="display:flex;flex-direction:column;gap:6px;"></div></div>
+    <div class="mfoot">
+      <button class="btn bsc" onclick="closeO('assignOvl')">Cancel</button>
+      <button class="btn bp" onclick="doAssignPI()">📌 Assign</button>
+    </div>
+  </div>
+</div>
+
+<div class="ovl" id="uOvl">
+  <div class="modal" style="max-width:400px;">
+    <h3 id="uOvlTitle">➕ Add User</h3>
+    <div class="field"><label>Display Name</label><input class="inp" id="uN" placeholder="e.g. Kattur Store"></div>
+    <div class="field"><label>Username <small style="color:var(--tx2);font-size:10px;">(used to login)</small></label>
+      <input class="inp" id="uUsr" placeholder="e.g. kattur" autocapitalize="none"></div>
+    <div class="field"><label>Password</label>
+      <div class="inpw"><input class="inp" type="password" id="uPw" placeholder="Min 4 characters">
+        <button class="eye" onclick="eyeToggle('uPw',this)">👁</button></div></div>
+    <div class="field"><label>Role</label>
+      <select class="inp" id="uRl"><option value="store">Store User</option><option value="admin">Admin</option></select></div>
+    <div class="field"><label>Store</label>
+      <select class="inp" id="uSt"><option value="">— Select Store —</option></select></div>
+    <div class="mfoot">
+      <button class="btn bsc" onclick="closeO('uOvl');editUID=null;">Cancel</button>
+      <button class="btn bp" id="uSaveBtn" onclick="saveUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<div class="ovl" id="photoOvl">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <h3 id="photoTitle">📷 Photo</h3>
+    <img id="photoImg" src="" style="width:100%;border-radius:8px;max-height:280px;object-fit:contain;">
+    <div class="mfoot"><button class="btn bsc bfl" onclick="closeO('photoOvl')">Close</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <script>
-// ═══════════════════════
-// DB + SESSION  (Firebase Realtime Database — syncs across all devices)
-// ═══════════════════════
+// ═══════════════════════════════════════════════════════════
+//  FIREBASE INIT
+// ═══════════════════════════════════════════════════════════
+let db, stor, fbOK = false;
 
-// ┌─────────────────────────────────────────────────────────────────┐
-// │  FIREBASE CONFIG — paste your own project config here          │
-// │  Get it from: Firebase Console → Project Settings → Your Apps  │
-// └─────────────────────────────────────────────────────────────────┘
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDPWiErsiy2-ZBThzfb8CQqVCaa3Bm4L5E",
-  authDomain: "kidza-quiz.firebaseapp.com",
-  databaseURL: "https://kidza-quiz-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kidza-quiz",
-  storageBucket: "kidza-quiz.firebasestorage.app",
-  messagingSenderId: "1005530966135",
-  appId: "1:1005530966135:web:5479ee774ac8ed59957e72"
+function configIsEmpty() {
+  return !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey.includes('PASTE');
+}
+
+function initFB() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db   = firebase.database();
+    stor = firebase.storage();
+    fbOK = true; return true;
+  } catch(e) { return false; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOCAL CACHE
+// ═══════════════════════════════════════════════════════════
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem('ims_'+k)); } catch(e){ return null; }},
+  set: (k,v) => { try { localStorage.setItem('ims_'+k, JSON.stringify(v)); } catch(e){}},
+  del: k => localStorage.removeItem('ims_'+k)
 };
 
-// Detect placeholder config — real keys start with "AIzaSy" and are 39 chars; fake ones aren't
-const FIREBASE_CONFIGURED = (
-  typeof FIREBASE_CONFIG.apiKey === 'string' &&
-  FIREBASE_CONFIG.apiKey.length >= 35 &&
-  FIREBASE_CONFIG.apiKey !== 'AIzaSyAbc123xyz' &&
-  !FIREBASE_CONFIG.messagingSenderId.startsWith('987654321')
-);
-
-let fbDB = null;  // Firebase database reference
-const SK = 'kidza_sess';
-const LOCAL_KEY = 'kidza_v7';
-
-const DB_DEFAULT = {
-  users:[
-    {id:'u0',name:'Admin',username:'admin',password:'kidza2024',role:'admin'},
-    {id:'u1',name:'TEST',username:'test',password:'1234',role:'staff'},
-    {id:'u2',name:'Rajagopal',username:'9629816727',password:'1234',role:'staff'},
-    {id:'u3',name:'Rajadurai',username:'9751088431',password:'1234',role:'staff'},
-    {id:'u1',name:'Tamilarsan',username:'8838405191',password:'1234',role:'staff'},
-    {id:'u1',name:'Manjula',username:'8012185613',password:'1234',role:'staff'},
-    {id:'u1',name:'Prasanth',username:'8838820294',password:'1234',role:'staff'},
-    {id:'u1',name:'Prabha',username:'8508463900',password:'1234',role:'staff'},
-    {id:'u1',name:'Surya',username:'8098493506',password:'1234',role:'staff'},
-    {id:'u1',name:'Swathi',username:'9789405578',password:'1234',role:'staff'},
-    {id:'u1',name:'Yuvarajan',username:'9787686585',password:'1234',role:'staff'},
-    {id:'u1',name:'Saranya',username:'7868061065',password:'1234',role:'staff'},
-    {id:'u1',name:'Veera',username:'9345486979',password:'1234',role:'staff'},
-    {id:'u1',name:'Philip Arun',username:'8072019655',password:'1234',role:'staff'},
-    {id:'u1',name:'Dhanajeyan',username:'8220268887',password:'1234',role:'staff'},
-    {id:'u1',name:'Kavya',username:'7418714690',password:'1234',role:'staff'},
-    {id:'u1',name:'Malathi',username:'9025431213',password:'1234',role:'staff'},
-    {id:'u1',name:'Narmatha',username:'9597166849',password:'1234',role:'staff'},
-    {id:'u1',name:'Priyadharsini',username:'8667540181',password:'1234',role:'staff'},
-    {id:'u1',name:'Tharik',username:'9025937706',password:'1234',role:'staff'},
-    {id:'u1',name:'Nila',username:'8825710851',password:'1234',role:'staff'}
-  ],
-  courses:[{
-    id:'c1',name:'Product Knowledge',desc:'Learn about Kidza products, categories and certifications.',
-    passPercent:60,timerK:30,timerS:10,assignedUsers:['u1','u2'],
-    materials:[{id:'m1',type:'video',title:'Product Overview',url:''},{id:'m2',type:'pdf',title:'Product Catalogue',url:''}],
-    questions:[
-      {id:'q1',question:'What is the Kidza return policy?',options:['7 Days','14 Days','30 Days','No Return'],answer:2},
-      {id:'q2',question:'Which certification is required for baby products?',options:['ISO','ISI','BIS','FDA'],answer:2},
-      {id:'q3',question:'Which age group uses newborn diapers?',options:['0-3 Months','1-2 Years','3-5 Years','5+ Years'],answer:0}
-    ]
-  }],
-  results:[],matProg:{},attempts:{}
+// ═══════════════════════════════════════════════════════════
+//  APP STATE
+// ═══════════════════════════════════════════════════════════
+let A = {
+  user: null,
+  soh: [], sohMap: {},
+  piItems: [],
+  piWeek: '', piAssign: null,
+  sohStore: 'ALL', sohPage: 0, SOH_PG: 100,
+  camMode: 'pi', camFace: 'environment',
+  qrScanner: null,
+  curResult: null,
+  histItem: null,
 };
+let editUID = null;
 
-let DB = JSON.parse(JSON.stringify(DB_DEFAULT));
+// ═══════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════
+const $  = id => document.getElementById(id);
+function showL(msg) { $('ltxt').textContent = msg||'Loading…'; $('loader').classList.remove('hide'); }
+function hideL()    { $('loader').classList.add('hide'); }
+function openO(id)  { $(id).classList.add('open'); }
+function closeO(id) { $(id).classList.remove('open'); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ── Initialise Firebase (only if configured) ──
-function initFirebase(){
-  if(!FIREBASE_CONFIGURED) return false;
-  if(typeof firebase === 'undefined'){
-    console.warn('Firebase SDK not loaded — running in offline mode.');
-    return false;
+function toast(msg, type='', dur=2800) {
+  const d = document.createElement('div');
+  d.className = 'tm' + (type?' '+type:'');
+  d.textContent = msg;
+  $('toast').appendChild(d);
+  setTimeout(() => d.remove(), dur);
+}
+
+function eyeToggle(id, btn) {
+  const i=$(id); i.type = i.type==='password'?'text':'password';
+  btn.textContent = i.type==='password'?'👁':'🙈';
+}
+
+function weekStr(d=new Date()) {
+  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  dt.setUTCDate(dt.getUTCDate()+4-(dt.getUTCDay()||7));
+  const y=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  const w=Math.ceil((((dt-y)/864e5)+1)/7);
+  return `${dt.getUTCFullYear()}-W${String(w).padStart(2,'0')}`;
+}
+function monthStr(d=new Date()) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function fmtDt(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STARTUP
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  if (configIsEmpty()) { hideL(); $('setupWrap').style.display='flex'; return; }
+  if (!initFB())       { hideL(); $('setupWrap').style.display='flex'; return; }
+
+  const saved = LS.get('session');
+  if (saved && saved.uid) {
+    showL('Auto-signing in…');
+    db.ref('users/'+saved.uid).get().then(snap => {
+      if (snap.exists()) { A.user={uid:saved.uid,...snap.val()}; afterLogin(); }
+      else { LS.del('session'); showAuth(); }
+    }).catch(()=>showAuth());
+  } else {
+    showAuth();
   }
-  try{
-    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    fbDB = firebase.database();
-    return true;
-  }catch(e){ console.warn('Firebase init failed:',e); return false; }
+});
+
+function showAuth() {
+  hideL();
+  $('setupWrap').style.display = 'none';
+  $('authWrap').style.display  = 'flex';
+  $('appShell').style.display  = 'none';
 }
 
-// ═══════════════════════
-// SYNC MANAGER (added) — realtime cross-device sync + status badge
-// ═══════════════════════
-function setSyncStatus(state,text){
-  const el=$('sync-status'); if(!el) return;
-  el.className=state; el.classList.remove('hidden');
-  const lbl=$('sync-status-text'); if(lbl) lbl.textContent=text||({online:'Online',offline:'Offline',syncing:'Syncing…'}[state]||state);
-}
-let _fbListenerAttached=false;
-// Real-time listener — automatically refreshes UI when data changes on another device
-function listenForChanges(){
-  if(!fbDB||_fbListenerAttached) return;
-  _fbListenerAttached=true;
-  fbDB.ref('kidza/db').on('value', snap=>{
-    if(!snap.exists()) return;
-    const d=snap.val();
-    DB=Object.assign({users:[],courses:[],results:[],matProg:{},attempts:{}},d);
-    try{localStorage.setItem(LOCAL_KEY,JSON.stringify(DB));}catch(e){}
-    setSyncStatus('online','Online');
-    refreshCurrentScreen();
-    sendToMIT('SYNC_SUCCESS'); // MIT App Inventor bridge event
-  }, err=>{console.warn('Firebase listener error:',err);setSyncStatus('offline','Offline');sendToMIT('SYNC_FAILED');});
-}
-// Re-render the currently visible screen so realtime updates appear instantly
-function refreshCurrentScreen(){
-  const active=document.querySelector('.screen.active');
-  if(!active||!CUR.user) return;
-  switch(active.id){
-    case 's-home': goHome(); break;
-    case 's-admin': renderAdmin(); break;
-    case 's-lb': renderLb(); break;
-    case 's-course': if(CID) openCourse(CID); break;
-  }
-}
-// Connect / reconnect helpers
-function connectFirebase(){ return initFirebase(); }
-function reconnectFirebase(){
-  if(connectFirebase()){ listenForChanges(); setSyncStatus('syncing','Syncing…'); lDB().then(()=>{setSyncStatus('online','Online');refreshCurrentScreen();}); }
-}
-window.addEventListener('online',()=>{setSyncStatus('syncing','Syncing…');reconnectFirebase();});
-window.addEventListener('offline',()=>{setSyncStatus('offline','Offline');});
+// ═══════════════════════════════════════════════════════════
+//  AUTH  (username / password stored in Firebase DB)
+// ═══════════════════════════════════════════════════════════
+async function doLogin() {
+  const username = ($('lgU').value||'').trim().toLowerCase();
+  const password = ($('lgP').value||'').trim();
+  const remember = $('remMe').checked;
+  $('lgErr').style.display = 'none';
+  if (!username||!password) { showErr('Enter username and password'); return; }
 
-// ── Save DB to Firebase + localStorage fallback ──
-let _saveTimer = null;
-function sDB(){
-  // Always write localStorage immediately as fallback
-  try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(DB)); }catch(e){}
-  // Debounce Firebase write by 400ms
-  if(fbDB){
-    setSyncStatus('syncing','Syncing…');
-    clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(()=>{
-      fbDB.ref('kidza/db').set(JSON.parse(JSON.stringify(DB)))
-        .then(()=>setSyncStatus('online','Online'))
-        .catch(e=>{console.warn('Firebase write error:',e);setSyncStatus('offline','Offline');});
-    }, 400);
-  }
-}
+  const btn=$('lgBtn'); btn.disabled=true; btn.textContent='Signing in…';
 
-// ── Load DB: Firebase first, then localStorage, then defaults ──
-async function lDB(){
-  // Try Firebase
-  if(fbDB){
-    try{
-      const snap = await fbDB.ref('kidza/db').get();
-      if(snap.exists()){
-        const d = snap.val();
-        DB = Object.assign({users:[],courses:[],results:[],matProg:{},attempts:{}}, d);
-        // Also update local cache
-        try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(DB)); }catch(e){}
-        return;
-      }
-    }catch(e){ console.warn('Firebase read error:',e); }
-  }
-  // Fallback: localStorage
-  try{
-    const s = localStorage.getItem(LOCAL_KEY);
-    if(s){ const d=JSON.parse(s); DB=Object.assign({users:[],courses:[],results:[],matProg:{},attempts:{}},d); return; }
-  }catch(e){}
-  // First run: use defaults and push to Firebase
-  DB = JSON.parse(JSON.stringify(DB_DEFAULT));
-  sDB();
-}
-
-// ── Session (remember-me is per-device by design) ──
-let CUR={user:null};
-function saveS(uid){try{localStorage.setItem(SK,uid);}catch(e){}}
-function clearS(){try{localStorage.removeItem(SK);}catch(e){}}
-function restoreS(){
-  try{const uid=localStorage.getItem(SK);if(uid){const u=DB.users.find(x=>x.id===uid);if(u){CUR.user=u;return true;}}}catch(e){}
-  return false;
-}
-
-// ═══════════════════════
-// UTIL
-// ═══════════════════════
-function nuid(){return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function $(i){return document.getElementById(i);}
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  $(id).classList.add('active');window.scrollTo(0,0);
-}
-function closeM(id){$(id).classList.add('hidden');}
-function openM(id){$(id).classList.remove('hidden');}
-
-// ═══════════════════════
-// MIT APP INVENTOR BRIDGE (added)
-// ═══════════════════════
-window.AppInventor = window.AppInventor || {};
-function sendToMIT(message){
-  try{
-    if(window.AppInventor && window.AppInventor.setWebViewString){
-      window.AppInventor.setWebViewString(message);
+  try {
+    // First-run: create preset admin if no users exist
+    const usersSnap = await db.ref('users').get();
+    if (!usersSnap.val()) {
+      const uid = PRESET_ADMIN.username;
+      await db.ref('users/'+uid).set({
+        uid, username:PRESET_ADMIN.username.toLowerCase(),
+        password:PRESET_ADMIN.password, name:PRESET_ADMIN.name,
+        role:'admin', store:'', disabled:false,
+        createdAt:new Date().toISOString()
+      });
     }
-  }catch(e){console.warn('AppInventor bridge error:',e);}
+
+    // Find user by username
+    const snap = await db.ref('users').orderByChild('username').equalTo(username).get();
+    const val  = snap.val();
+    if (!val) { showErr('Username not found'); reset(); return; }
+
+    const uid = Object.keys(val)[0];
+    const u   = val[uid];
+    if (u.disabled)          { showErr('Account disabled — contact admin.'); reset(); return; }
+    if (u.password!==password){ showErr('Incorrect password'); reset(); return; }
+
+    A.user = {uid, ...u};
+    if (remember) LS.set('session',{uid});
+    afterLogin();
+
+  } catch(e) { showErr('Login error: '+e.message); reset(); }
+
+  function showErr(m){ $('lgErr').textContent=m; $('lgErr').style.display='block'; }
+  function reset(){ btn.disabled=false; btn.textContent='Sign In →'; }
 }
 
-// ═══════════════════════
-// NAVIGATION MANAGER (added — centralized screen history stack)
-// Replaces ad-hoc NS array logic. Old helper names (navTo/navPush/navBack)
-// are kept as thin aliases so all existing onclick="" calls keep working.
-// ═══════════════════════
-const NS=[]; // screen history stack — kept for backward compatibility with existing code (admin init etc.)
-const ROOT_SCREENS=['s-login','s-home','s-admin']; // screens where "back" should exit (or do nothing on login)
-
-function navigateTo(screenId){
-  // Prevent duplicate consecutive history entries / navigation loops
-  if(NS[NS.length-1]===screenId) { showScreen(screenId); return; }
-  NS.push(screenId);
-  try{ history.pushState({screen:screenId}, document.title); }catch(e){}
-  showScreen(screenId);
+function doLogout() {
+  if (!confirm('Sign out?')) return;
+  LS.del('session'); A.user=null; A.piItems=[];
+  if (A.qrScanner) { A.qrScanner.stop().catch(()=>{}); A.qrScanner=null; }
+  $('appShell').style.display='none';
+  $('authWrap').style.display='flex';
+  $('lgU').value=''; $('lgP').value='';
+  $('lgBtn').disabled=false; $('lgBtn').textContent='Sign In →';
+  $('lgErr').style.display='none';
 }
 
-function navigateBack(){
-  const current=NS[NS.length-1];
-  if(NS.length>1){
-    NS.pop();
-    const prev=NS[NS.length-1];
-    showScreen(prev);
-    return;
-  }
-  // Only one (or zero) screens in stack — we're at a root screen
-  if(current==='s-home'||current==='s-admin'){
-    // Home/Admin back → notify MIT App Inventor to close the app
-    sendToMIT('EXIT');
-    return;
-  }
-  if(current==='s-login'||!current){
-    // Nothing to go back to from login
-    return;
-  }
-  // Fallback: go to home
-  goHome();
+// ═══════════════════════════════════════════════════════════
+//  AFTER LOGIN
+// ═══════════════════════════════════════════════════════════
+function afterLogin() {
+  $('authWrap').style.display = 'none';
+  $('appShell').style.display = 'flex';
+  const u=A.user, isAdmin=u.role==='admin';
+  const initials=(u.name||u.username||'U').slice(0,2).toUpperCase();
+  $('uNm').textContent = u.name||u.username;
+  $('uAv').textContent = initials;
+  isAdmin ? $('uAv').classList.add('adm') : $('uAv').classList.remove('adm');
+
+  document.querySelectorAll('.admEl').forEach(el => el.style.display = isAdmin?'':'none');
+
+  A.piWeek = weekStr();
+  ['piWBg','swBadge','awBadge'].forEach(id => { const e=$(id); if(e) e.textContent=A.piWeek; });
+
+  // Populate store selects
+  const hfs=$('hfStore'); hfs.innerHTML='<option value="ALL">All Stores</option>';
+  STORES.forEach(s => hfs.innerHTML+=`<option value="${s}">${s}</option>`);
+  const uSt=$('uSt'); uSt.innerHTML='<option value="">— Select Store —</option>';
+  STORES.forEach(s => uSt.innerHTML+=`<option value="${s}">${s}</option>`);
+  const aW=$('aWeek'); if(aW) aW.value=A.piWeek;
+
+  // Load data
+  loadSOH();
+  listenPIAssign();
+  renderDash();
+  if (isAdmin) { loadUsers(); loadRcApprovals(); loadFiles(); loadGSUrlFromDB(); }
+
+  // Offline
+  window.addEventListener('online',  ()=>{ $('offB').style.display='none'; syncOffQ(); });
+  window.addEventListener('offline', ()=>{ $('offB').style.display='block'; });
+  if (!navigator.onLine) $('offB').style.display='block';
+
+  hideL();
+  goSec('dashboard',null);
 }
 
-function clearNavigation(){
-  NS.length=0;
-  try{ history.replaceState({},document.title); }catch(e){}
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function goSec(name, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nbb,.nbtn').forEach(b=>b.classList.remove('on'));
+  $('sec-'+name).classList.add('on');
+  if(btn) btn.classList.add('on');
+  document.querySelectorAll(`[data-s="${name}"]`).forEach(b=>b.classList.add('on'));
+  if (name==='pi')      initPI();
+  if (name==='history') renderHist();
+  if (name==='dashboard') renderDash();
+  if (name==='users')   { loadUsers(); loadRcApprovals(); }
+  if (name==='upload')  loadFiles();
 }
 
-// Backward-compatible aliases used throughout the existing codebase
-function navPush(id){navigateTo(id);}
-function navBack(){navigateBack();}
-function navTo(id){navigateTo(id);}
-
-// Hardware / browser back button (also used by MIT App Inventor WebViewer)
-window.addEventListener('popstate',function(){navigateBack();});
-
-// Notification
-function askNotif(){if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();}
-function pushNotif(t,b){if('Notification' in window&&Notification.permission==='granted')new Notification(t,{body:b});}
-
-// ═══════════════════════
-// AUTH
-// ═══════════════════════
-async function doLogin(){
-  const un=$('l-user').value.trim().toLowerCase();
-  const pw=$('l-pass').value;
-  const rem=$('l-rem').checked;
-  // Pull latest DB from Firebase so users added on another device are visible
-  const btn=document.querySelector('#s-login .btn-blue');
-  if(btn){btn.textContent='Syncing…';btn.disabled=true;}
-  await lDB();
-  if(btn){btn.textContent='Sign In';btn.disabled=false;}
-  const user=DB.users.find(u=>u.username.toLowerCase()===un&&u.password===pw);
-  if(!user){$('l-err').textContent='Invalid username or password.';$('l-err').classList.remove('hidden');sendToMIT('LOGIN_FAILED');return;}
-  $('l-err').classList.add('hidden');
-  CUR.user=user;
-  if(rem)saveS(user.id);
-  askNotif();
-  sendToMIT('LOGIN_SUCCESS'); // MIT App Inventor bridge event
-  if(user.role==='admin'){NS.length=0;NS.push('s-admin');renderAdmin();showScreen('s-admin');}
-  else{NS.length=0;NS.push('s-home');goHome();}
+// ═══════════════════════════════════════════════════════════
+//  OFFLINE QUEUE
+// ═══════════════════════════════════════════════════════════
+let offQ = LS.get('offQ')||[];
+function fbSet(path,data) {
+  if(navigator.onLine) return db.ref(path).set(data);
+  offQ.push({path,data}); LS.set('offQ',offQ); return Promise.resolve();
 }
-async function syncNow(){
-  const btn=$('sync-btn');
-  if(btn){btn.textContent='Syncing…';btn.disabled=true;}
-  setSyncStatus('syncing','Syncing…');
-  try{
-    await lDB();
-    setSyncStatus(fbDB?'online':'offline', fbDB?'Online':'Offline');
-    sendToMIT('SYNC_SUCCESS');
-  }catch(e){
-    setSyncStatus('offline','Offline');
-    sendToMIT('SYNC_FAILED');
-  }
-  if(btn){btn.textContent='✓ Done';setTimeout(()=>{btn.textContent='↻ Sync';btn.disabled=false;},1500);}
-  renderAdmin();
+function fbUpd(path,data) {
+  if(navigator.onLine) return db.ref(path).update(data);
+  offQ.push({path,data,upd:true}); LS.set('offQ',offQ); return Promise.resolve();
 }
-function doLogout(){sendToMIT('LOGOUT');clearS();CUR.user=null;$('l-user').value='';$('l-pass').value='';$('l-rem').checked=false;clearNavigation();showScreen('s-login');}
+function syncOffQ() {
+  if (!offQ.length) return;
+  offQ.forEach(i=>i.upd?db.ref(i.path).update(i.data):db.ref(i.path).set(i.data));
+  offQ=[]; LS.set('offQ',[]);
+  toast('☁️ Offline data synced','ok');
+}
 
-// ═══════════════════════
-// HOME
-// ═══════════════════════
-function goHome(){
-  const u=CUR.user;
-  $('h-sub').textContent='Hello, '+u.name.split(' ')[0];
-  const myC=DB.courses.filter(c=>(c.assignedUsers||[]).includes(u.id));
-  const allA=Object.entries(DB.attempts).filter(([k])=>k.startsWith(u.id+'_')).flatMap(([,v])=>v);
-  const pcts=allA.map(a=>a.pct);
-  const avg=pcts.length?Math.round(pcts.reduce((s,v)=>s+v,0)/pcts.length):0;
-  const best=pcts.length?Math.max(...pcts):0;
-  $('home-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-num">${myC.length}</div><div class="stat-lbl">Courses</div></div>
-    <div class="stat-card"><div class="stat-num">${allA.length}</div><div class="stat-lbl">Attempts</div></div>
-    <div class="stat-card"><div class="stat-num">${avg}%</div><div class="stat-lbl">Avg Score</div></div>
-    <div class="stat-card"><div class="stat-num">${best}%</div><div class="stat-lbl">Best Score</div></div>`;
-  // Notifs
-  const ns=[];
-  myC.forEach(c=>{const k=u.id+'_'+c.id;const a=DB.attempts[k]||[];
-    if(!a.length)ns.push('New quiz assigned: <b>'+esc(c.name)+'</b>');
-    else if(a.length===1)ns.push('1 attempt left for <b>'+esc(c.name)+'</b>');
+// ═══════════════════════════════════════════════════════════
+//  SOH
+// ═══════════════════════════════════════════════════════════
+function loadSOH() {
+  const c=LS.get('soh');
+  if (c&&c.length){ A.soh=c; buildSOHMap(); initSOHFilters(); renderSOH(); }
+  db.ref('soh').once('value').then(snap=>{
+    const v=snap.val(); if(!v) return;
+    const arr=Array.isArray(v)?v:Object.values(v);
+    A.soh=arr; LS.set('soh',arr); buildSOHMap(); initSOHFilters(); renderSOH();
+  }).catch(()=>{});
+}
+
+function buildSOHMap() {
+  A.sohMap={};
+  A.soh.forEach(r=>{
+    const cc=(r.Concatinate||r.Concatenate||'').trim().toUpperCase();
+    const cd=(r.ProductCode||'').trim().toUpperCase();
+    const st=(r.StoreName||'').trim();
+    if(cc) A.sohMap[cc]=r;
+    if(cd&&!A.sohMap[cd]) A.sohMap[cd]=r;
+    if(st&&cd) A.sohMap[(st+cd).toUpperCase()]=r;
   });
-  $('notif-area').innerHTML=ns.map(n=>`<div class="notif-card"><span style="font-size:20px;">&#128276;</span><div><div style="font-weight:700;font-size:13px;">Notification<span class="notif-dot"></span></div><div style="font-size:13px;">${n}</div></div></div>`).join('');
-  if(!myC.length){$('home-courses').innerHTML='<p class="muted ctr" style="padding:16px;">No courses assigned yet.</p>';}
-  else{
-    $('home-courses').innerHTML=myC.map(c=>{
-      const k=u.id+'_'+c.id;const a=DB.attempts[k]||[];
-      const bp=a.length?Math.max(...a.map(x=>x.pct)):null;
-      const md=allMatsDone(u.id,c.id);
-      const badge=a.length>=2?'<span class="badge bd-grey">Done</span>':md?'<span class="badge bd-pass">Ready</span>':'<span class="badge bd-warn">Materials</span>';
-      return `<div class="item-row" onclick="openCourse('${c.id}')">
-        <div class="item-icon ic-course">&#128218;</div>
-        <div class="item-info"><div class="item-title">${esc(c.name)}</div>
-          <div class="item-sub">${c.questions.length} Q &middot; ${a.length}/2 attempts${bp!==null?' &middot; Best: '+bp+'%':''}</div></div>
-        ${badge}</div>`;
-    }).join('');
+}
+
+function lookupSOH(code) {
+  const st=A.user?.store||'';
+  return A.sohMap[(st+code).toUpperCase()]||A.sohMap[code.toUpperCase()]||null;
+}
+
+function initSOHFilters() {
+  const isAdmin=A.user?.role==='admin';
+  const wrap=$('sohFCs'); wrap.innerHTML='';
+  if (!isAdmin) return;
+  const stores=['ALL',...new Set(A.soh.map(r=>(r.StoreName||'').trim()).filter(Boolean))];
+  stores.forEach(s=>{
+    const c=document.createElement('span'); c.className='fc'+(s===A.sohStore?' on':'');
+    c.textContent=s==='ALL'?'All Stores':s;
+    c.onclick=()=>{ A.sohStore=s; A.sohPage=0;
+      document.querySelectorAll('#sohFCs .fc').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on'); renderSOH(); };
+    wrap.appendChild(c);
+  });
+}
+
+function renderSOH() {
+  const q=($('sohQ')?.value||'').trim().toLowerCase();
+  const isAdmin=A.user?.role==='admin';
+  let data=A.soh;
+  if (!isAdmin) data=data.filter(r=>(r.StoreName||'').trim()===A.user?.store);
+  else if (A.sohStore!=='ALL') data=data.filter(r=>(r.StoreName||'').trim()===A.sohStore);
+  if (q) data=data.filter(r=>
+    (r.ProductCode||'').toLowerCase().includes(q)||
+    (r.Brand||'').toLowerCase().includes(q)||
+    (r.Class||'').toLowerCase().includes(q)||
+    (r.Department||'').toLowerCase().includes(q)
+  );
+  const total=data.length, pg=data.slice(A.sohPage*A.SOH_PG,(A.sohPage+1)*A.SOH_PG);
+  const el=$('sohTbl');
+  if (!total) { el.innerHTML='<div style="text-align:center;padding:30px;color:var(--tx2)"><div style="font-size:36px;margin-bottom:8px">📋</div><b>No Records</b><p style="font-size:12px;margin-top:4px">Upload SOH CSV or search differently</p></div>'; $('sohPgr').textContent=''; return; }
+  el.innerHTML=`<div class="tbw"><table>
+    <thead><tr><th>Store</th><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>MRP</th><th>SOH</th></tr></thead>
+    <tbody>${pg.map(r=>`<tr><td>${esc(r.StoreName||'')}</td><td class="tdc">${esc(r.ProductCode||'')}</td>
+      <td>${esc(r.Department||'—')}</td><td>${esc(r.Class||'—')}</td><td>${esc(r.Brand||'—')}</td>
+      <td>₹${esc(r.MRP||'—')}</td><td><b>${esc(r.SOH||r.soh||'—')}</b></td></tr>`).join('')}
+    </tbody></table></div>`;
+  const pages=Math.ceil(total/A.SOH_PG);
+  $('sohPgr').innerHTML=pages>1?
+    `${A.sohPage*A.SOH_PG+1}–${Math.min((A.sohPage+1)*A.SOH_PG,total)} of ${total}
+     <button class="btn bxs bsc" onclick="A.sohPage=Math.max(0,A.sohPage-1);renderSOH()" ${A.sohPage===0?'disabled':''}>‹</button>
+     ${A.sohPage+1}/${pages}
+     <button class="btn bxs bsc" onclick="A.sohPage=Math.min(${pages-1},A.sohPage+1);renderSOH()" ${A.sohPage===pages-1?'disabled':''}>›</button>`
+    : `${total} records`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CSV UPLOAD
+// ═══════════════════════════════════════════════════════════
+function handleCSV(e) {
+  const file=e.target.files[0]; if(!file) return;
+  showL('Parsing CSV…');
+  Papa.parse(file,{header:true,skipEmptyLines:true,complete:async res=>{
+    const rows=res.data; if(!rows.length){hideL();toast('CSV empty','err');return;}
+    showL(`Uploading ${rows.length} records…`);
+    A.soh=rows; LS.set('soh',rows); buildSOHMap(); initSOHFilters(); renderSOH();
+    try {
+      await db.ref('soh').set(rows);
+      const meta={name:file.name,rows:rows.length,at:new Date().toISOString(),by:A.user?.name||A.user?.username};
+      await db.ref('sohFiles/'+Date.now()).set(meta);
+      hideL(); toast(`✅ ${rows.length} records uploaded`,'ok');
+      $('csvSt').innerHTML=`<div class="info igr">✅ ${rows.length} records from "${esc(file.name)}"</div>`;
+      loadFiles();
+    } catch(e){hideL();toast('Upload failed: '+e.message,'err');}
+  }});
+  e.target.value='';
+}
+
+async function loadFiles() {
+  const el=$('fileList'); if(!el) return;
+  try {
+    const snap=await db.ref('sohFiles').get(); const val=snap.val();
+    if (!val){el.innerHTML='<div style="color:var(--tx2);font-size:13px;">No files yet</div>';return;}
+    el.innerHTML=Object.entries(val).sort((a,b)=>b[0]-a[0]).map(([k,f])=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--sf2);border-radius:var(--rs);margin-bottom:5px;">
+        <div><b style="font-size:13px;">📄 ${esc(f.name)}</b><br>
+        <span style="font-size:11px;color:var(--tx2);">${f.rows} rows · ${fmtDt(f.at)} · ${esc(f.by||'Admin')}</span></div>
+        <button class="btn bxs bdn" onclick="delFile('${k}')">🗑</button>
+      </div>`).join('');
+  } catch(e){}
+}
+
+async function delFile(k){if(!confirm('Delete record?'))return;await db.ref('sohFiles/'+k).remove();loadFiles();toast('Deleted');}
+async function delAllSOH(){
+  if(!confirm('Delete ALL SOH data?'))return;
+  if(!confirm('⚠️ Confirm — all stock data will be erased.'))return;
+  showL('Deleting…');
+  await db.ref('soh').remove(); await db.ref('sohFiles').remove();
+  A.soh=[]; A.sohMap={}; LS.del('soh'); renderSOH(); loadFiles(); hideL();
+  toast('All SOH data deleted','ok');
+}
+
+function saveGSUrl(){const url=$('gsUrl').value.trim();if(!url)return;db.ref('settings/gsheetURL').set(url);LS.set('gsUrl',url);toast('URL saved','ok');}
+function loadGSUrlFromDB(){const c=LS.get('gsUrl');if(c)$('gsUrl').value=c;db.ref('settings/gsheetURL').get().then(s=>{if(s.val())$('gsUrl').value=s.val();});}
+async function syncGS(){
+  const url=$('gsUrl').value.trim(); if(!url){toast('Enter URL first','err');return;}
+  $('gsSt').textContent='Syncing…';
+  try {
+    const res=await fetch(url); const txt=await res.text();
+    const parsed=Papa.parse(txt,{header:true,skipEmptyLines:true});
+    if(!parsed.data.length){$('gsSt').textContent='⚠️ No data';return;}
+    showL('Syncing…'); A.soh=parsed.data; LS.set('soh',A.soh);
+    buildSOHMap(); initSOHFilters(); renderSOH();
+    await db.ref('soh').set(A.soh); hideL();
+    $('gsSt').innerHTML=`<span class="chip cgr">✅ ${A.soh.length} records synced at ${new Date().toLocaleTimeString()}</span>`;
+    toast('Synced','ok');
+  } catch(e){hideL();$('gsSt').innerHTML=`<span class="chip crd">❌ ${e.message} — try CSV download instead</span>`;}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PHYSICAL INVENTORY
+// ═══════════════════════════════════════════════════════════
+function listenPIAssign() {
+  db.ref('pi_assignments').on('value',snap=>{
+    const all=snap.val()||{}; A.piAssign=all[A.piWeek]||null;
+    if ($('sec-pi').classList.contains('on')) initPI();
+  });
+}
+
+function initPI() {
+  const isAdmin=A.user?.role==='admin';
+  const assigned=A.piAssign, myStore=A.user?.store;
+  const isAssigned=isAdmin||(assigned&&assigned.stores&&assigned.stores.includes(myStore));
+  $('piNone').style.display=isAssigned?'none':'block';
+  $('piBody').style.display=isAssigned?'block':'none';
+  if (isAssigned&&assigned) {
+    $('piBnr').style.display='block';
+    $('piBnr').innerHTML=`<div class="info ibl" style="margin-bottom:12px;">📌 <b>PI Assigned — ${A.piWeek}</b> · ${fmtDt(assigned.assignedAt)}</div>`;
+  } else { $('piBnr').style.display='none'; }
+  if (A.piItems.length===0) loadPIDraft();
+  renderPIList(); checkRecount();
+}
+
+function piCodeCh(){ $('piInfo').style.display='none'; }
+
+function lookupCode() {
+  const code=$('piCode').value.trim().toUpperCase(); if(!code)return;
+  const row=lookupSOH(code);
+  if (row) {
+    $('pic').textContent=row.ProductCode||code; $('pid').textContent=row.Department||'—';
+    $('picl').textContent=row.Class||'—'; $('pib').textContent=row.Brand||'—';
+    $('pim').textContent=row.MRP?'₹'+row.MRP:'—'; $('pis').textContent=row.SOH||row.soh||'—';
+    $('piInfo').style.display='block';
+  } else {
+    $('piInfo').style.display='none';
+    toast('Not in SOH — will still be captured','');
   }
-  showScreen('s-home');
+  $('piQty').focus();
 }
 
-function allMatsDone(uid,cid){
-  const c=DB.courses.find(x=>x.id===cid);
-  if(!c||!c.materials||!c.materials.length)return true;
-  return c.materials.every(m=>DB.matProg[uid+'_'+cid+'_'+m.id]);
+function addPI() {
+  const code=$('piCode').value.trim().toUpperCase();
+  const qty=parseInt($('piQty').value);
+  if (!code){toast('Enter a product code','err');return;}
+  if (isNaN(qty)||qty<0){toast('Enter valid quantity','err');return;}
+  const row=lookupSOH(code)||{};
+  const ex=A.piItems.find(i=>i.code===code);
+  if (ex){ex.physQty=qty;toast(`Updated ${code}: Qty ${qty}`);}
+  else { A.piItems.push({code,dept:row.Department||'—',cls:row.Class||'—',brand:row.Brand||'—',
+    mrp:row.MRP||'0',soh:parseFloat(row.SOH||row.soh||0)||0,physQty:qty}); toast(`✅ Added ${code}`,'ok'); }
+  autoSavePI();
+  $('piCode').value=''; $('piQty').value=''; $('piInfo').style.display='none'; $('piCode').focus();
+  renderPIList();
 }
 
-// ═══════════════════════
-// COURSE
-// ═══════════════════════
-let CID=null;
-function openCourse(cid){
-  CID=cid;
-  const c=DB.courses.find(x=>x.id===cid),u=CUR.user;
-  $('cd-bar').textContent=c.name;
-  $('cd-name').textContent=c.name;
-  $('cd-desc').textContent=c.desc||'';
-  const mats=c.materials||[];
-  if(!mats.length){$('cd-mats').innerHTML='<p class="muted" style="font-size:13px;">No materials.</p>';}
-  else{
-    $('cd-mats').innerHTML=mats.map(m=>{
-      const done=DB.matProg[u.id+'_'+cid+'_'+m.id];
-      const ic={video:'&#127916;',ppt:'&#128202;',pdf:'&#128196;',gif:'&#128248;',image:'&#128248;'};
-      const cc={video:'ic-video',ppt:'ic-ppt',pdf:'ic-pdf',gif:'ic-img',image:'ic-img'};
-      return `<div class="item-row${done?' done':''}" onclick="${done?'void 0':'viewMat(\''+cid+'\',\''+m.id+'\')'}">
-        <div class="item-icon ${cc[m.type]||'ic-pdf'}">${ic[m.type]||'&#128206;'}</div>
-        <div class="item-info"><div class="item-title">${esc(m.title)}</div><div class="item-sub">${m.type.toUpperCase()}</div></div>
-        ${done?'<span class="badge bd-pass">Done</span>':'<span class="badge bd-blue">View</span>'}
+function autoSavePI() {
+  const draft={store:A.user.store,week:A.piWeek,items:A.piItems,at:new Date().toISOString()};
+  fbSet('pi_drafts/'+A.user.uid,draft); LS.set('piDraft',draft);
+}
+
+async function loadPIDraft() {
+  const c=LS.get('piDraft');
+  if(c&&c.week===A.piWeek&&c.store===A.user?.store){A.piItems=c.items||[];renderPIList();if(A.piItems.length)toast(`📂 Resumed: ${A.piItems.length} items`,'ok');}
+  try {
+    const snap=await db.ref('pi_drafts/'+A.user.uid).get(); const v=snap.val();
+    if(v&&v.week===A.piWeek){A.piItems=v.items||[];LS.set('piDraft',v);renderPIList();}
+  } catch(e){}
+}
+
+function renderPIList() {
+  const cnt=A.piItems.length;
+  $('piCnt').textContent=cnt; $('submitPIBtn').disabled=cnt===0;
+  const el=$('piList');
+  if (!cnt){el.innerHTML='<div style="text-align:center;padding:16px;color:var(--tx2);font-size:13px;">No items yet</div>';return;}
+  el.innerHTML=A.piItems.map((it,i)=>`
+    <div class="pirow">
+      <div><div class="picode">${esc(it.code)}</div>
+        <div class="pimeta">${esc(it.dept)} · ${esc(it.cls)} · ${esc(it.brand)} · ₹${esc(it.mrp)}</div></div>
+      <input class="qinp" type="number" value="${it.physQty}" min="0"
+        onchange="A.piItems[${i}].physQty=parseInt(this.value)||0;autoSavePI()">
+      <button class="dbtn" onclick="A.piItems.splice(${i},1);renderPIList();autoSavePI()">✕</button>
+    </div>`).join('');
+}
+
+function clearPI() {
+  if(!confirm('Clear all counted items?'))return;
+  A.piItems=[]; renderPIList();
+  db.ref('pi_drafts/'+A.user.uid).remove().catch(()=>{}); LS.del('piDraft');
+}
+
+async function submitPI() {
+  if(!A.piItems.length)return;
+  if(!confirm('Submit Physical Inventory? This cannot be undone.'))return;
+  showL('Generating variance report…');
+  const result=A.piItems.map(it=>{
+    const sys=it.soh||0,phys=it.physQty,vr=phys-sys,mrp=parseFloat(it.mrp)||0;
+    return{code:it.code,dept:it.dept,cls:it.cls,brand:it.brand,mrp:it.mrp,sysQty:sys,physQty:phys,variance:vr,varVal:vr*mrp};
+  });
+  const tv=result.filter(r=>r.variance!==0).length;
+  const pos=result.filter(r=>r.variance>0).length, neg=result.filter(r=>r.variance<0).length;
+  const tvv=result.reduce((s,r)=>s+r.varVal,0);
+  const id=`${A.user.store}_${A.piWeek}_${Date.now()}`;
+  const sub={id,store:A.user.store,week:A.piWeek,ts:new Date().toISOString(),
+    items:A.piItems,result,submittedBy:A.user.name||A.user.username,
+    summary:{total:result.length,matched:result.length-tv,totalVar:tv,pos,neg,tvv,
+      varPct:result.length?((tv/result.length)*100).toFixed(1):'0'},
+    recountStatus:'none'};
+  A.curResult=sub;
+  try {
+    await db.ref('pi_history/'+id).set(sub);
+    await db.ref('pi_drafts/'+A.user.uid).remove().catch(()=>{});
+    LS.del('piDraft'); A.piItems=[]; renderPIList(); hideL();
+    showVarReport(sub); checkRecount(); renderHist(); renderDash();
+    toast('✅ Physical Inventory submitted!','ok');
+  } catch(e){hideL();toast('Failed: '+e.message,'err');}
+}
+
+function showVarReport(sub) {
+  const s=sub.summary, vr=sub.result.filter(r=>r.variance!==0);
+  $('piResBody').innerHTML=`
+    <div class="sgrid" style="margin-bottom:12px;">
+      <div class="scard ca" style="padding:11px"><div class="sval" style="font-size:20px">${s.total}</div><div class="slbl">Total</div></div>
+      <div class="scard co" style="padding:11px"><div class="sval" style="font-size:20px">${s.matched}</div><div class="slbl">✅ Matched</div></div>
+      <div class="scard cd" style="padding:11px"><div class="sval" style="font-size:20px">${s.totalVar}</div><div class="slbl">⚠️ Variance</div></div>
+      <div class="scard cw" style="padding:11px"><div class="sval" style="font-size:14px">₹${Math.abs(s.tvv||0).toFixed(0)}</div><div class="slbl">Var Value</div></div>
+      <div class="scard cg" style="padding:11px"><div class="sval" style="font-size:20px;color:var(--ok)">+${s.pos}</div><div class="slbl">Positive</div></div>
+      <div class="scard cg" style="padding:11px"><div class="sval" style="font-size:20px;color:var(--dn)">${s.neg}</div><div class="slbl">Negative</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:12px">Variance: <b>${s.varPct}%</b> · ${fmtDt(sub.ts)}</div>
+    ${vr.length?`<div class="tbw"><table>
+      <thead><tr><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>MRP</th><th>Sys</th><th>Phys</th><th>Var</th><th>Var₹</th></tr></thead>
+      <tbody>${vr.map(r=>`<tr><td class="tdc">${esc(r.code)}</td><td>${esc(r.dept)}</td><td>${esc(r.cls)}</td><td>${esc(r.brand)}</td>
+        <td>₹${esc(r.mrp)}</td><td>${r.sysQty}</td><td>${r.physQty}</td>
+        <td class="${r.variance>0?'vp':r.variance<0?'vn':'vz'}">${r.variance>0?'+':''}${r.variance}</td>
+        <td class="${r.varVal>0?'vp':r.varVal<0?'vn':'vz'}">₹${(r.varVal||0).toFixed(0)}</td></tr>`).join('')}
+      </tbody></table></div>`
+    :'<div class="info igr">✅ All items match system stock — no variance!</div>'}`;
+  openO('piResOvl');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RECOUNT
+// ═══════════════════════════════════════════════════════════
+async function checkRecount() {
+  const store=A.user?.store; if(!store)return;
+  try {
+    const snap=await db.ref('pi_history').orderByChild('store').equalTo(store).limitToLast(10).get();
+    const val=snap.val(); if(!val){$('rcSec').style.display='none';return;}
+    const recs=Object.values(val).filter(h=>h.week===A.piWeek).sort((a,b)=>b.ts.localeCompare(a.ts));
+    if(!recs.length){$('rcSec').style.display='none';return;}
+    renderRc(recs[0]); $('rcSec').style.display='block';
+  } catch(e){$('rcSec').style.display='none';}
+}
+
+function renderRc(pi) {
+  const el=$('rcBody'), st=pi.recountStatus||'none';
+  if      (st==='none')        el.innerHTML=`<div class="info ibl" style="margin-bottom:10px">Photo proof required per product code.</div><button class="btn bwn bfl" onclick="startRC(1,'${pi.id}')">📷 Start Recount 1</button>`;
+  else if (st==='r1_done')     el.innerHTML=`<span class="chip cgr">✅ Recount 1 Submitted</span><p style="font-size:12px;color:var(--tx2);margin-top:8px">Awaiting admin approval for Recount 2.</p>`;
+  else if (st==='r2_approved') el.innerHTML=`<span class="chip cgr">✅ R1 Done · Admin approved R2</span><br><button class="btn bp bfl" style="margin-top:10px" onclick="startRC(2,'${pi.id}')">📷 Start Recount 2</button>`;
+  else if (st==='r2_done')     el.innerHTML=`<span class="chip cpr">✅ Both Recounts Complete</span>`;
+}
+
+let RC={piId:null,num:0,items:{}};
+
+function startRC(num,piId) {
+  RC={piId,num,items:{}};
+  const m=document.createElement('div'); m.className='ovl open'; m.id='rcModal';
+  m.innerHTML=`<div class="modal" style="max-width:400px">
+    <h3>🔄 Recount ${num}</h3>
+    <div class="info iyl" style="margin-bottom:10px">For each product: enter code + qty + capture photo (mandatory).</div>
+    <div class="field"><label>Product Code</label><input class="inp" id="rc_c" placeholder="Product code" inputmode="numeric"></div>
+    <div class="field"><label>Quantity</label><input class="inp" type="number" id="rc_q" placeholder="Qty" min="0"></div>
+    <input type="file" id="rc_cam" accept="image/*" capture="environment" style="display:none" onchange="rcPhoto()">
+    <button class="btn bsc bfl bsm" onclick="document.getElementById('rc_cam').click()">📷 Capture Photo for Code</button>
+    <div id="rc_list" style="margin-top:10px;max-height:180px;overflow-y:auto;"></div>
+    <div class="mfoot">
+      <button class="btn bsc" onclick="$('rcModal').remove()">Cancel</button>
+      <button class="btn bok" onclick="submitRC()">✅ Submit Recount ${num}</button>
+    </div></div>`;
+  document.body.appendChild(m);
+}
+
+function rcPhoto() {
+  const code=($('rc_c')?.value||'').trim().toUpperCase();
+  const qty=parseInt($('rc_q')?.value||'');
+  if (!code){toast('Enter code first','err');return;}
+  if (isNaN(qty)){toast('Enter quantity','err');return;}
+  const file=$('rc_cam').files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    RC.items[code]={code,qty,photo:e.target.result,ts:new Date().toISOString()};
+    $('rc_list').innerHTML=Object.values(RC.items).map(it=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--sf2);border-radius:6px;margin-bottom:4px;">
+        <img src="${it.photo}" style="width:38px;height:38px;object-fit:cover;border-radius:4px;flex-shrink:0">
+        <div><b>${esc(it.code)}</b> · Qty ${it.qty}</div>
+        <button class="btn bxs bdn" style="margin-left:auto" onclick="delete RC.items['${it.code}'];rcPhoto()">✕</button>
+      </div>`).join('');
+    $('rc_c').value=''; $('rc_q').value='';
+    toast(`✅ ${code} captured`,'ok');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitRC() {
+  const items=Object.values(RC.items);
+  if (!items.length){toast('Capture at least one photo','err');return;}
+  showL('Uploading photos…');
+  const uploads={};
+  for (const it of items) {
+    try {
+      const blob=await (await fetch(it.photo)).blob();
+      const ref=stor.ref(`recountPhotos/${RC.piId}/${RC.num}/${it.code}_${Date.now()}.jpg`);
+      await ref.put(blob);
+      uploads[it.code]={code:it.code,qty:it.qty,photoURL:await ref.getDownloadURL(),ts:it.ts};
+    } catch(e) {
+      uploads[it.code]={code:it.code,qty:it.qty,photoBase64:it.photo,ts:it.ts};
+    }
+  }
+  const k=RC.num===1?'r1':'r2';
+  const upd={recountStatus:RC.num===1?'r1_done':'r2_done',
+    [`${k}Data`]:uploads,[`${k}At`]:new Date().toISOString(),[`${k}By`]:A.user.name||A.user.username};
+  try {
+    await fbUpd('pi_history/'+RC.piId,upd);
+    hideL(); toast(`✅ Recount ${RC.num} submitted`,'ok');
+    $('rcModal')?.remove(); checkRecount(); loadRcApprovals();
+  } catch(e){hideL();toast('Failed: '+e.message,'err');}
+}
+
+async function approveR2(id) {
+  if(!confirm('Approve Recount 2 for this store?'))return;
+  await fbUpd('pi_history/'+id,{recountStatus:'r2_approved',r2ApprovedAt:new Date().toISOString(),r2ApprovedBy:A.user.name});
+  toast('✅ Recount 2 Approved','ok');
+  loadRcApprovals(); renderHist(); renderDash();
+}
+
+async function loadRcApprovals() {
+  const el=$('rcApprovals'); if(!el)return;
+  try {
+    const snap=await db.ref('pi_history').orderByChild('recountStatus').equalTo('r1_done').get();
+    const val=snap.val();
+    if (!val){el.innerHTML='<div style="color:var(--tx2);font-size:12px;">No pending requests</div>';return;}
+    el.innerHTML=Object.values(val).map(h=>`
+      <div class="aprow">
+        <div><b>${esc(h.store)}</b> · ${esc(h.week)}<br>
+          <span style="font-size:11px;color:var(--tx2)">R1 submitted ${fmtDt(h.r1At)}</span></div>
+        <div style="display:flex;gap:5px;">
+          <button class="btn bxs bsc" onclick="showHistDetail('${h.id}')">View</button>
+          <button class="btn bxs bok" onclick="approveR2('${h.id}')">Approve R2</button>
+        </div>
+      </div>`).join('');
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════════════════════
+function hPerCh() {
+  const p=$('hfPer').value;
+  $('hDateR').style.display=p==='custom'?'grid':'none';
+  renderHist();
+}
+
+async function renderHist() {
+  const el=$('histList');
+  el.innerHTML='<div style="text-align:center;padding:20px"><div class="spin"></div></div>';
+  try {
+    const snap=await db.ref('pi_history').limitToLast(300).get();
+    let recs=Object.values(snap.val()||{}).sort((a,b)=>b.ts.localeCompare(a.ts));
+    const isAdmin=A.user?.role==='admin';
+    if (!isAdmin) recs=recs.filter(r=>r.store===A.user?.store);
+    const sf=$('hfStore').value; if(sf!=='ALL') recs=recs.filter(r=>r.store===sf);
+    const pf=$('hfPer').value;
+    if (pf==='week')        recs=recs.filter(r=>r.week===weekStr());
+    else if(pf==='month')   recs=recs.filter(r=>r.ts&&r.ts.startsWith(monthStr()));
+    else if(pf==='custom')  {
+      const fr=$('hFrom').value, to=$('hTo').value;
+      if(fr) recs=recs.filter(r=>r.ts>=fr);
+      if(to) recs=recs.filter(r=>r.ts<=to+'T23:59:59');
+    }
+    if (!recs.length){
+      el.innerHTML='<div style="text-align:center;padding:30px;color:var(--tx2)"><div style="font-size:36px;margin-bottom:8px">📂</div><b>No Records</b><p style="font-size:12px;margin-top:4px">No PI history for this filter</p></div>';
+      return;
+    }
+    const sm={none:'cgr',r1_done:'cyl',r2_approved:'cbl',r2_done:'cpr'};
+    const sl={none:'Submitted',r1_done:'R1 Done',r2_approved:'R2 Approved',r2_done:'Complete'};
+    el.innerHTML=recs.map((h,i)=>{
+      const s=h.summary||{}, rc=h.recountStatus||'none';
+      return `<div class="li" onclick="showHistDetail('${h.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div><div style="font-weight:700">#${recs.length-i} · ${esc(h.store)} — ${esc(h.week)}</div>
+            <div style="font-size:12px;color:var(--tx2);margin-top:3px">${s.total||0} items · <span style="color:var(--dn)">${s.totalVar||0} variance</span> · ${s.varPct||0}%</div></div>
+          <span class="chip ${sm[rc]||'cgy'}">${sl[rc]||rc}</span>
+        </div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:4px">${fmtDt(h.ts)} · ${esc(h.submittedBy||'—')}</div>
       </div>`;
     }).join('');
-  }
-  const k=u.id+'_'+c.id;const a=DB.attempts[k]||[];const md=allMatsDone(u.id,cid);
-  if(a.length>=2){const bp=Math.max(...a.map(x=>x.pct));$('cd-quiz').innerHTML=`<div class="alert al-warn">Both attempts used. Best: <b>${bp}%</b></div>`;}
-  else if(!md){$('cd-quiz').innerHTML=`<div class="alert al-warn">Complete all materials first.</div>`;}
-  else{$('cd-quiz').innerHTML=`<button class="btn btn-blue btn-full" onclick="openQType('${cid}')">Take Quiz (Attempt ${a.length+1}/2)</button>`;}
-  navTo('s-course');
-  sendToMIT('COURSE_OPENED'); // MIT App Inventor bridge event
+  } catch(e){ el.innerHTML=`<div class="info ird">Error: ${e.message}</div>`; }
 }
 
-// ═══════════════════════
-// MATERIAL
-// ═══════════════════════
-let VM={cid:null,mid:null};
-function viewMat(cid,mid){
-  VM={cid,mid};
-  const c=DB.courses.find(x=>x.id===cid),m=c.materials.find(x=>x.id===mid);
-  $('mat-bar').textContent=m.title;
-  let h='<div class="pg-title mb2">'+esc(m.title)+'</div>';
-  const url=(m.url||'').trim();
-  if(m.type==='video'){
-    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No video URL set.</div>';}
-    else if(url.includes('youtu')){
-      const ym=url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
-      const vid=ym?ym[1]:'';
-      if(vid){h+='<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:14px;overflow:hidden;background:#000;"><iframe src="https://www.youtube-nocookie.com/embed/'+vid+'?rel=0&playsinline=1&modestbranding=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen title="'+esc(m.title)+'"></iframe></div>';}
-      else{h+='<div class="alert al-warn">Could not parse YouTube URL.</div>';}
-    }else if(url.includes('vimeo.com')){
-      const vid=url.split('/').pop().split('?')[0];
-      h+='<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:14px;overflow:hidden;background:#000;"><iframe src="https://player.vimeo.com/video/'+vid+'?playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay;fullscreen" allowfullscreen></iframe></div>';
-    }else{h+='<video controls playsinline preload="metadata" style="width:100%;border-radius:14px;background:#000;" src="'+esc(url)+'"><p>Cannot play video.</p></video>';}
-  }else if(m.type==='ppt'){
-    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No PPT URL set.</div>';}
-    else{
-      let vu=url;
-      // Convert any Google Drive share link to embeddable preview URL
-      const gdMatch=url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if(gdMatch){vu='https://drive.google.com/file/d/'+gdMatch[1]+'/preview';}
-      h+='<div style="border-radius:14px;overflow:hidden;border:1.5px solid var(--border);"><iframe src="'+vu+'" style="width:100%;height:420px;border:none;" allow="autoplay" title="'+esc(m.title)+'"></iframe></div><p style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center;">Presentation loads inline — no external app needed.</p>';
-    }
-  }else if(m.type==='pdf'){
-    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No PDF URL set.</div>';}
-    else{h+='<div style="border-radius:14px;overflow:hidden;border:1.5px solid var(--border);"><iframe src="'+esc(url)+'" style="width:100%;height:440px;border:none;"></iframe></div>';}
-  }else if(m.type==='gif'||m.type==='image'){
-    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No image URL set.</div>';}
-    else{h+='<img src="'+esc(url)+'" style="width:100%;border-radius:14px;" alt="'+esc(m.title)+'">';}
-  }
-  $('mat-content').innerHTML=h;
-  const done=DB.matProg[CUR.user.id+'_'+cid+'_'+mid];
-  if(done){$('mat-done-area').innerHTML='<div class="alert al-ok">Already marked complete.</div>';}
-  else{$('mat-done-area').innerHTML='<div class="alert al-warn mb1">Once marked complete, you cannot re-view this material.</div><button class="btn btn-success btn-full" onclick="markMatDone()">Mark as Completed</button>';}
-  navTo('s-mat');
-}
-function markMatDone(){
-  if(!confirm('Mark complete? You will not be able to re-view.'))return;
-  DB.matProg[CUR.user.id+'_'+VM.cid+'_'+VM.mid]=true;sDB();
-  sendToMIT('MATERIAL_COMPLETED'); // MIT App Inventor bridge event
-  $('mat-done-area').innerHTML='<div class="alert al-ok">Marked complete!</div>';
-  setTimeout(()=>openCourse(VM.cid),800);
-}
-function backFromMat(){if(CID)openCourse(CID);else navBack();}
-
-// ═══════════════════════
-// QUIZ TYPE
-// ═══════════════════════
-let QMODE=null;
-function openQType(cid){
-  CID=cid;
-  const c=DB.courses.find(x=>x.id===cid),k=CUR.user.id+'_'+c.id,a=DB.attempts[k]||[];
-  $('qt-cname').textContent=c.name;
-  $('qt-info').textContent='Attempt '+(a.length+1)+' of 2. Choose your quiz mode.';
-  navTo('s-qtype');
-}
-
-// ═══════════════════════
-// INSTRUCTIONS
-// ═══════════════════════
-function openInst(mode){
-  QMODE=mode;
-  const c=DB.courses.find(x=>x.id===CID),k=CUR.user.id+'_'+c.id,a=DB.attempts[k]||[];
-  const t=mode==='speed'?c.timerS:c.timerK;
-  $('inst-ttl').textContent=(mode==='speed'?'Speed Quiz':'Knowledge Quiz')+' — '+c.name;
-  $('inst-sub').textContent='Attempt '+(a.length+1)+' of 2';
-  const steps=['This quiz has <b>'+c.questions.length+' questions</b>.',
-    'You have <b>'+t+' seconds per question</b>.',
-    'Select one answer — you cannot change it once selected.',
-    'Answers shown <b>after all questions</b>.',
-    'Passing score: <b>'+c.passPercent+'%</b>.',
-    'You have <b>2 total attempts</b>. Highest score is recorded.',
-    'Do not close or refresh during the quiz.'];
-  $('inst-list').innerHTML=steps.map((s,i)=>'<div class="inst-step"><div class="inst-num">'+(i+1)+'</div><div style="font-size:14px;">'+s+'</div></div>').join('');
-  if(a.length===1){$('inst-warn').innerHTML='<div class="alert al-warn">This is your <b>final attempt</b>.</div>';$('inst-warn').classList.remove('hidden');}
-  else $('inst-warn').classList.add('hidden');
-  navTo('s-inst');
-}
-
-// ═══════════════════════
-// QUIZ ENGINE
-// ═══════════════════════
-let QS={cid:null,mode:null,cur:0,answers:[],ti:null,tl:0,qOrder:[]};
-const LT=['A','B','C','D','E'];
-function shuffleArr(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function startQuiz(){
-  const c=DB.courses.find(x=>x.id===CID),k=CUR.user.id+'_'+c.id,a=DB.attempts[k]||[];
-  const qOrder=shuffleArr(c.questions.map((_,i)=>i));
-  QS={cid:CID,mode:QMODE,cur:0,answers:[],ti:null,tl:0,qOrder};
-  $('qz-name').textContent=CUR.user.name;
-  $('qz-pips').innerHTML=[0,1].map(i=>'<div class="pip'+(i<a.length?' used':'')+'"></div>').join('')+'<span style="font-size:11px;color:rgba(255,255,255,.65);margin-left:4px;">Att.'+(a.length+1)+'</span>';
-  navTo('s-quiz');loadQ();
-  sendToMIT('QUIZ_STARTED'); // MIT App Inventor bridge event
-}
-function loadQ(){
-  clearInterval(QS.ti);
-  const c=DB.courses.find(x=>x.id===QS.cid),q=c.questions[QS.qOrder[QS.cur]];
-  $('qz-prog').style.width=(QS.cur/c.questions.length*100)+'%';
-  $('qz-cnt').textContent='Q '+(QS.cur+1)+' / '+c.questions.length;
-  $('qz-q').textContent=q.question;
-  $('qz-opts').innerHTML=q.options.map((o,i)=>'<div class="opt-card" id="qo'+i+'" onclick="selOpt('+i+')"><div class="opt-letter">'+LT[i]+'</div><div class="opt-text">'+esc(o)+'</div></div>').join('');
-  $('qz-next').classList.add('hidden');
-  startT(QMODE==='speed'?c.timerS:c.timerK);
-}
-function startT(s){
-  QS.tl=s;upT();
-  QS.ti=setInterval(()=>{QS.tl--;upT();if(QS.tl<=0){clearInterval(QS.ti);autoN();}},1000);
-}
-function upT(){
-  $('qz-tsec').textContent=QS.tl;
-  $('qz-timer').classList.toggle('urgent',QS.tl<=5);
-}
-function selOpt(i){
-  clearInterval(QS.ti);
-  const c=DB.courses.find(x=>x.id===QS.cid),q=c.questions[QS.qOrder[QS.cur]];
-  document.querySelectorAll('.opt-card').forEach(o=>o.style.pointerEvents='none');
-  $('qo'+i).classList.add('sel');
-  QS.answers.push({q:q.question,sel:i,ans:q.answer,opts:q.options});
-  $('qz-next').classList.remove('hidden');
-}
-function autoN(){
-  const c=DB.courses.find(x=>x.id===QS.cid),q=c.questions[QS.qOrder[QS.cur]];
-  QS.answers.push({q:q.question,sel:-1,ans:q.answer,opts:q.options});
-  nextQ();
-}
-function nextQ(){
-  const c=DB.courses.find(x=>x.id===QS.cid);
-  QS.cur++;
-  if(QS.cur>=c.questions.length)finishQ();else loadQ();
-}
-function finishQ(){
-  clearInterval(QS.ti);
-  const c=DB.courses.find(x=>x.id===QS.cid);
-  let sc=0;QS.answers.forEach(a=>{if(a.sel===a.ans)sc++;});
-  const tot=c.questions.length,pct=Math.round(sc/tot*100),passed=pct>=c.passPercent;
-  const k=CUR.user.id+'_'+c.id;
-  if(!DB.attempts[k])DB.attempts[k]=[];
-  DB.attempts[k].push({score:sc,total:tot,pct,passed,mode:QS.mode,date:new Date().toLocaleString()});
-  const atts=DB.attempts[k];
-  DB.results.push({uid:CUR.user.id,name:CUR.user.name,cid:c.id,cname:c.name,score:sc,total:tot,pct,passed,mode:QS.mode,attempt:atts.length,date:new Date().toLocaleString()});
-  sDB();
-  $('res-sc').textContent=sc;$('res-tot').textContent='/ '+tot;$('res-pct').textContent=pct+'%';
-  $('res-hd').textContent=passed?'Quiz Completed!':'Quiz Completed';
-  $('res-status').innerHTML=passed?'<span class="badge bd-pass" style="font-size:13px;padding:6px 16px;">PASSED</span>':'<span class="badge bd-fail" style="font-size:13px;padding:6px 16px;">FAILED</span>';
-  const rem=2-atts.length,bp=Math.max(...atts.map(a=>a.pct));
-  $('res-rem').textContent=rem>0?rem+' attempt(s) remaining · Best: '+bp+'%':'No attempts remaining · Final: '+bp+'%';
-  $('res-review').innerHTML=QS.answers.map((a,i)=>{
-    const ok=a.sel===a.ans,cls=a.sel===-1?'rev-skip':ok?'rev-ok':'rev-ng',icon=a.sel===-1?'Skipped':ok?'Correct':'Wrong';
-    return '<div class="rev-item '+cls+'"><b>'+icon+' Q'+(i+1)+'.</b> '+esc(a.q)+'<br><br><span>Your answer: <b>'+(a.sel>=0?LT[a.sel]+'. '+esc(a.opts[a.sel]):'Not answered')+'</b></span><br><span>Correct: <b style="color:var(--success)">'+LT[a.ans]+'. '+esc(a.opts[a.ans])+'</b></span></div>';
-  }).join('');
-  pushNotif('Kidza Quiz Complete','You scored '+pct+'% on '+c.name);
-  sendToMIT('QUIZ_COMPLETED'); // MIT App Inventor bridge event
-  if(passed)showCg(sc,tot,pct);else{NS.push('s-result');showScreen('s-result');}
-}
-
-// ═══════════════════════
-// CONGRATS
-// ═══════════════════════
-function showCg(sc,tot,pct){
-  $('cg-sc').textContent=sc;$('cg-tot').textContent='/ '+tot;
-  $('cg-msg').textContent='You scored '+pct+'% — keep it up!';
-  $('cg-em').textContent=pct>=90?'&#127942;':pct>=75?'&#127881;':'&#127775;';
-  $('cg-ttl').textContent=pct>=90?'Outstanding!':pct>=75?'Excellent Work!':'Well Done!';
-  const box=$('cg-box');
-  box.querySelectorAll('.confetti-p').forEach(p=>p.remove());
-  const cols=['#1a56db','#fbbf24','#34d399','#f472b6','#60a5fa','#e53935'];
-  for(let i=0;i<30;i++){const p=document.createElement('div');p.className='confetti-p';p.style.cssText='left:'+Math.random()*100+'%;background:'+cols[i%6]+';animation-delay:'+Math.random()*1.2+'s;animation-duration:'+(2.2+Math.random()*1.5)+'s;';box.appendChild(p);}
-  $('cg-ov').classList.remove('hidden');
-  NS.push('s-result');showScreen('s-result');
-}
-function closeCg(){$('cg-ov').classList.add('hidden');}
-function goHomeFromResult(){NS.length=0;NS.push('s-home');goHome();}
-
-// ═══════════════════════
-// LEADERBOARD
-// ═══════════════════════
-let lbTab='all';
-function goLb(){navTo('s-lb');renderLb();}
-function switchLbTab(tab){
-  lbTab=tab;
-  $('lb-cfilter').classList.toggle('hidden',tab!=='course');
-  document.querySelectorAll('#lb-tabs .tab-btn').forEach((b,i)=>b.classList.toggle('active',['all','course'][i]===tab));
-  if(tab==='course'){$('lb-csel').innerHTML='<option value="">All Courses</option>'+DB.courses.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');}
-  renderLb();
-}
-function renderLb(){
-  const fc=$('lb-csel')?$('lb-csel').value:'';
-  const scores={};
-  DB.users.filter(u=>u.role==='staff').forEach(u=>{
-    let best=null,ta=0;
-    DB.courses.forEach(c=>{
-      if(fc&&c.id!==fc)return;
-      (DB.attempts[u.id+'_'+c.id]||[]).forEach(a=>{ta++;if(!best||a.pct>best.pct)best={pct:a.pct,score:a.score,total:a.total,cname:c.name};});
+async function showHistDetail(id) {
+  try {
+    const snap=await db.ref('pi_history/'+id).get(); const h=snap.val(); if(!h)return;
+    A.histItem=h;
+    const s=h.summary||{}, vr=(h.result||[]).filter(r=>r.variance!==0);
+    const isAdmin=A.user?.role==='admin';
+    let html=`<div class="info ibl" style="margin-bottom:10px"><b>${esc(h.store)}</b> · ${esc(h.week)} · ${s.total||0} items · ${s.varPct||0}% variance</div>
+      <div class="sgrid" style="margin-bottom:10px">
+        <div class="scard co" style="padding:10px"><div class="sval" style="font-size:18px">${s.matched||0}</div><div class="slbl">Matched</div></div>
+        <div class="scard cd" style="padding:10px"><div class="sval" style="font-size:18px">${s.totalVar||0}</div><div class="slbl">Variance</div></div>
+        <div class="scard cw" style="padding:10px"><div class="sval" style="font-size:12px">₹${Math.abs(s.tvv||0).toFixed(0)}</div><div class="slbl">Var Value</div></div>
+      </div>`;
+    if(vr.length) html+=`<div class="tbw"><table>
+      <thead><tr><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>MRP</th><th>Sys</th><th>Phys</th><th>Var</th><th>Var₹</th></tr></thead>
+      <tbody>${vr.map(r=>`<tr><td class="tdc">${esc(r.code)}</td><td>${esc(r.dept)}</td><td>${esc(r.cls)}</td><td>${esc(r.brand)}</td>
+        <td>₹${esc(r.mrp)}</td><td>${r.sysQty}</td><td>${r.physQty}</td>
+        <td class="${r.variance>0?'vp':r.variance<0?'vn':'vz'}">${r.variance>0?'+':''}${r.variance}</td>
+        <td class="${r.varVal>0?'vp':r.varVal<0?'vn':'vz'}">₹${(r.varVal||0).toFixed(0)}</td></tr>`).join('')}
+      </tbody></table></div>`;
+    else html+='<div class="info igr">✅ No variance items</div>';
+    ['r1','r2'].forEach(k=>{
+      if(h[`${k}Data`]){
+        const photos=Object.values(h[`${k}Data`]);
+        html+=`<div class="dvd"></div><div class="cttl">📷 Recount ${k==='r1'?1:2} Photos</div>
+          <div class="pgrid">${photos.map(it=>`<div class="pthumb">
+            <img src="${it.photoURL||it.photoBase64||''}" onclick="viewPhoto('${it.photoURL||it.photoBase64||''}','${esc(it.code)}')">
+            <div class="pc">${esc(it.code)} · Qty ${it.qty}</div>
+          </div>`).join('')}</div>`;
+      }
     });
-    scores[u.id]={name:u.name,uid:u.id,best,ta};
+    if (isAdmin&&h.recountStatus==='r1_done')
+      html+=`<div class="dvd"></div><button class="btn bok bfl" onclick="approveR2('${h.id}');closeO('histOvl')">✅ Approve Recount 2</button>`;
+    if (isAdmin)
+      html+=`<div class="dvd"></div><button class="btn bdn bsm" onclick="delHistRec('${h.id}')">🗑 Delete Record</button>`;
+    $('histOvlTitle').textContent=`${h.store} · ${h.week}`;
+    $('histOvlBody').innerHTML=html;
+    openO('histOvl');
+  } catch(e){toast('Error: '+e.message,'err');}
+}
+
+function viewPhoto(url,code){$('photoTitle').textContent='📷 '+code;$('photoImg').src=url;openO('photoOvl');}
+async function delHistRec(id){if(!confirm('Delete permanently?'))return;await db.ref('pi_history/'+id).remove();toast('Deleted');closeO('histOvl');renderHist();}
+
+// ── Exports ──
+function expVarXLS(){_xls(A.curResult);}
+function expVarPDF(){_pdf(A.curResult);}
+function expDetXLS(){_xls(A.histItem);}
+function expDetPDF(){_pdf(A.histItem);}
+function expHistXLS(){toast('Open a record then use ⬇ Excel','');}
+function expHistPDF(){toast('Open a record then use ⬇ PDF','');}
+
+function _xls(sub){
+  if(!sub)return;
+  const wb=XLSX.utils.book_new();
+  const d=[['Code','Dept','Class','Brand','MRP','System Qty','Physical Qty','Variance','Variance Value']];
+  sub.result.forEach(r=>d.push([r.code,r.dept,r.cls,r.brand,r.mrp,r.sysQty,r.physQty,r.variance,(r.varVal||0).toFixed(2)]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(d),'Variance');
+  XLSX.writeFile(wb,`PI_${sub.store}_${sub.week}.xlsx`);
+}
+function _pdf(sub){
+  if(!sub)return;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape'});
+  doc.setFontSize(13);
+  doc.text(`Variance Report — ${sub.store} | ${sub.week}`,14,14);
+  doc.setFontSize(9);
+  doc.text(`Submitted: ${fmtDt(sub.ts)} | Total: ${sub.summary?.total||0} | Variance: ${sub.summary?.varPct||0}%`,14,20);
+  doc.autoTable({startY:25,
+    head:[['Code','Dept','Class','Brand','MRP','Sys Qty','Phys Qty','Variance','Var Value']],
+    body:sub.result.map(r=>[r.code,r.dept,r.cls,r.brand,'₹'+r.mrp,r.sysQty,r.physQty,r.variance,'₹'+(r.varVal||0).toFixed(0)]),
+    styles:{fontSize:8},headStyles:{fillColor:[37,99,235]}
   });
-  const sorted=Object.values(scores).sort((a,b)=>(b.best?.pct||0)-(a.best?.pct||0));
-  const rCls=(i)=>i===0?'r1':i===1?'r2':i===2?'r3':'rN';
-  const rIcon=(i)=>i===0?'&#129351;':i===1?'&#129352;':i===2?'&#129353;':'#'+(i+1);
-  $('lb-list').innerHTML=sorted.map((r,i)=>`
-    <div class="lb-item${r.uid===CUR.user.id?' lb-me':''}">
-      <div class="lb-rank ${rCls(i)}">${rIcon(i)}</div>
-      <div style="flex:1;"><div class="lb-name">${esc(r.name)}${r.uid===CUR.user.id?' (You)':''}</div>
-        <div class="lb-sub">${r.best?r.best.score+'/'+r.best.total+' &middot; '+r.best.cname:'No attempts yet'}</div></div>
-      <div class="lb-pct">${r.best?r.best.pct+'%':'&mdash;'}</div>
-    </div>`).join('');
+  doc.save(`VarianceReport_${sub.store}_${sub.week}.pdf`);
 }
 
-// ═══════════════════════
-// ADMIN
-// ═══════════════════════
-function renderAdmin(){
-  $('adm-sub').textContent='Logged in as '+CUR.user.name;
-  admTab('ov');
-}
-function admTab(t){
-  ['ov','co','us','re'].forEach(x=>$('adm-'+x).classList.toggle('hidden',x!==t));
-  document.querySelectorAll('#adm-tabs .tab-btn').forEach((b,i)=>b.classList.toggle('active',['ov','co','us','re'][i]===t));
-  if(t==='ov')renderAdmOv();
-  if(t==='co')renderAdmCo();
-  if(t==='us')renderAdmUs();
-  if(t==='re')renderAdmRe();
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════
+async function renderDash() {
+  const isAdmin=A.user?.role==='admin';
+  $('sDash').style.display=isAdmin?'none':'block';
+  $('aDash').style.display=isAdmin?'block':'none';
+  if(isAdmin) await renderAdminDash(); else await renderStoreDash();
 }
 
-const CHS={};
-function mkC(id,type,data,opts){if(CHS[id])CHS[id].destroy();CHS[id]=new Chart($(id).getContext('2d'),{type,data,options:opts});}
-
-function renderAdmOv(){
-  const allA=Object.values(DB.attempts).flat();
-  const passed=allA.filter(a=>a.passed).length;
-  const avg=allA.length?Math.round(allA.reduce((s,a)=>s+a.pct,0)/allA.length):0;
-  $('adm-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-num">${DB.users.filter(u=>u.role==='staff').length}</div><div class="stat-lbl">Staff</div></div>
-    <div class="stat-card"><div class="stat-num">${DB.courses.length}</div><div class="stat-lbl">Courses</div></div>
-    <div class="stat-card"><div class="stat-num">${allA.length}</div><div class="stat-lbl">Attempts</div></div>
-    <div class="stat-card"><div class="stat-num">${avg}%</div><div class="stat-lbl">Avg Score</div></div>`;
-  const bk=[0,0,0,0,0];allA.forEach(a=>bk[Math.min(4,Math.floor(a.pct/20))]++);
-  mkC('ch-sc','bar',{labels:['0-20%','21-40%','41-60%','61-80%','81-100%'],datasets:[{label:'Attempts',data:bk,backgroundColor:['#dc2626','#f97316','#eab308','#22c55e','#16a34a'],borderRadius:8,borderSkipped:false}]},{plugins:{legend:{display:false}},scales:{y:{ticks:{stepSize:1},grid:{color:'#f1f5f9'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false});
-  mkC('ch-pf','doughnut',{labels:['Passed','Failed'],datasets:[{data:[passed,allA.length-passed],backgroundColor:['#16a34a','#dc2626'],borderWidth:0}]},{plugins:{legend:{position:'bottom'}},responsive:true,maintainAspectRatio:false,cutout:'62%'});
-  const cl=DB.courses.map(c=>c.name.length>16?c.name.slice(0,16)+'...':c.name);
-  const cd=DB.courses.map(c=>{const n=(c.assignedUsers||[]).length;if(!n)return 0;const d=(c.assignedUsers||[]).filter(u=>allMatsDone(u,c.id)).length;return Math.round(d/n*100);});
-  mkC('ch-cp','bar',{labels:cl,datasets:[{label:'%',data:cd,backgroundColor:'#1a56db',borderRadius:8,borderSkipped:false}]},{plugins:{legend:{display:false}},scales:{y:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f1f5f9'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false});
+async function renderStoreDash() {
+  try {
+    const snap=await db.ref('pi_history').orderByChild('store').equalTo(A.user.store).get();
+    const recs=Object.values(snap.val()||{});
+    const tw=recs.filter(r=>r.week===A.piWeek).sort((a,b)=>b.ts.localeCompare(a.ts));
+    const lat=tw[0];
+    $('s1').textContent=A.piAssign?.stores?.includes(A.user.store)?'✓':'—';
+    $('s2').textContent=lat?.summary?.total||0;
+    $('s3').textContent=lat?.summary?.totalVar||0;
+    $('s4').textContent=recs.filter(r=>r.recountStatus==='r1_done'&&r.week===A.piWeek).length;
+    $('s5').textContent=recs.length;
+    $('s6').textContent=lat?'Submitted':'Pending';
+  } catch(e){}
 }
 
-function renderAdmCo(){
-  $('adm-co-list').innerHTML=DB.courses.map(c=>`
-    <div class="item-row" style="cursor:default;flex-wrap:wrap;gap:8px;">
-      <div class="item-icon ic-course">&#128218;</div>
-      <div class="item-info"><div class="item-title">${esc(c.name)}</div><div class="item-sub">${c.questions.length} Q &middot; ${(c.materials||[]).length} Mat &middot; ${(c.assignedUsers||[]).length} Users</div></div>
-      <div class="row"><button class="btn btn-outline btn-xs" onclick="openCModal('${c.id}')">Edit</button><button class="btn btn-danger btn-xs" onclick="delCourse('${c.id}')">Del</button></div>
-    </div>`).join('')||'<p class="muted">No courses yet.</p>';
+async function renderAdminDash() {
+  try {
+    const snap=await db.ref('pi_history').limitToLast(500).get();
+    const all=Object.values(snap.val()||{});
+    const tw=all.filter(h=>h.week===weekStr());
+    const tm=all.filter(h=>h.ts?.startsWith(monthStr()));
+    $('a1').textContent=STORES.length;
+    $('a2').textContent=tw.length;
+    const wv=tw.length?(tw.reduce((s,h)=>{const t=h.summary?.total||0,v=h.summary?.totalVar||0;return t>0?s+(v/t)*100:s;},0)/tw.length).toFixed(1)+'%':'—';
+    const mv=tm.length?(tm.reduce((s,h)=>{const t=h.summary?.total||0,v=h.summary?.totalVar||0;return t>0?s+(v/t)*100:s;},0)/tm.length).toFixed(1)+'%':'—';
+    $('a3').textContent=wv; $('a4').textContent=mv;
+    const rc=all.filter(h=>h.recountStatus==='r1_done').length;
+    $('a5').textContent=rc; $('a6').textContent=rc;
+    const sv={};
+    tw.forEach(h=>{const p=parseFloat(h.summary?.varPct||0);if(!sv[h.store]||p>sv[h.store])sv[h.store]=p;});
+    const sorted=Object.entries(sv).sort((a,b)=>b[1]-a[1]);
+    const avg=sorted.length?sorted.reduce((s,[,v])=>s+v,0)/sorted.length:0;
+    $('aTopV').innerHTML=sorted.length
+      ?sorted.map(([st,pct])=>`<div class="vbar ${pct>avg*1.5?'vhi':pct>avg?'vme':'vlo'}"><b>${esc(st)}</b><span class="chip ${pct>avg*1.5?'crd':pct>avg?'cyl':'cgr'}">${pct.toFixed(1)}%</span></div>`).join('')
+      :'<div style="color:var(--tx2);font-size:12px">No submissions this week</div>';
+    const wt={};
+    all.forEach(h=>{if(!wt[h.week])wt[h.week]={total:0,var:0,cnt:0};wt[h.week].total+=h.summary?.total||0;wt[h.week].var+=h.summary?.totalVar||0;wt[h.week].cnt++;});
+    const rw=Object.entries(wt).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,4).reverse();
+    $('aTrend').innerHTML=rw.length
+      ?rw.map(([w,d])=>{const p=d.total?((d.var/d.total)*100).toFixed(1):'0.0';return`<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${w}</span><span>${p}% (${d.cnt} stores)</span></div><div class="pgw"><div class="pgb" style="width:${Math.min(100,parseFloat(p)*5)}%"></div></div></div>`;}).join('')
+      :'<div style="color:var(--tx2);font-size:12px">No data yet</div>';
+  } catch(e){}
 }
 
-function renderAdmUs(){
-  // Show ALL users including admins, full list
-  $('adm-us-list').innerHTML=DB.users.map(u=>`
-    <div class="item-row" style="cursor:default;">
-      <div class="av">${u.name[0].toUpperCase()}</div>
-      <div class="item-info"><div class="item-title">${esc(u.name)}</div><div class="item-sub">@${esc(u.username)} &middot; ${u.role}</div></div>
-      <div class="row"><button class="btn btn-outline btn-xs" onclick="openUModal('${u.id}')">Edit</button>${u.id!=='u0'?'<button class="btn btn-danger btn-xs" onclick="delUser(\''+u.id+'\')">Del</button>':''}</div>
-    </div>`).join('');
+// ═══════════════════════════════════════════════════════════
+//  ASSIGN PI
+// ═══════════════════════════════════════════════════════════
+function openAssignPI() {
+  const w=$('aWeek')?.value||A.piWeek;
+  $('assignWk').value=w;
+  $('assignSts').innerHTML=STORES.map(s=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:7px 11px;background:var(--sf2);border-radius:6px;cursor:pointer;">
+      <input type="checkbox" value="${s}" style="accent-color:var(--ac)"> ${s}
+    </label>`).join('');
+  openO('assignOvl');
 }
 
-function renderAdmRe(){
-  const sel=$('adm-fc').value;
-  $('adm-fc').innerHTML='<option value="">All Courses</option>'+DB.courses.map(c=>'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+'</option>').join('');
-  $('adm-fc').value=sel;
-  const rows=DB.results.filter(r=>!sel||r.cid===sel);
-  $('adm-re-body').innerHTML=rows.map((r,i)=>`<tr>
-    <td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.cname)}</td>
-    <td>${r.score}/${r.total} (${r.pct}%)</td>
-    <td><span class="badge bd-blue">${r.mode==='speed'?'Speed':'Know.'}</span></td>
-    <td><span class="badge ${r.passed?'bd-pass':'bd-fail'}">${r.passed?'PASS':'FAIL'}</span></td>
-    <td><button class="btn btn-warn btn-xs" onclick="reassign('${r.uid}','${r.cid}')">Reset</button></td>
-  </tr>`).join('')||'<tr><td colspan="7" class="muted ctr">No results.</td></tr>';
-  // Leaderboard in admin
-  const sc={};
-  DB.users.filter(u=>u.role==='staff').forEach(u=>{
-    let best=null;
-    DB.courses.forEach(c=>{(DB.attempts[u.id+'_'+c.id]||[]).forEach(a=>{if(!best||a.pct>best.pct)best={pct:a.pct,score:a.score,total:a.total};});});
-    sc[u.id]={name:u.name,best};
+async function doAssignPI() {
+  const week=$('assignWk').value; if(!week){toast('Select a week','err');return;}
+  const stores=Array.from(document.querySelectorAll('#assignSts input:checked')).map(c=>c.value);
+  if(!stores.length){toast('Select at least one store','err');return;}
+  const obj={week,stores,assignedAt:new Date().toISOString(),assignedBy:A.user.name||A.user.username};
+  try {
+    await db.ref('pi_assignments/'+week).set(obj);
+    toast(`✅ PI assigned to: ${stores.join(', ')}`,'ok');
+    closeO('assignOvl'); renderDash();
+  } catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  USER MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+async function loadUsers() {
+  const el=$('userList'); if(!el)return;
+  el.innerHTML='<div style="text-align:center;padding:20px"><div class="spin"></div></div>';
+  try {
+    const snap=await db.ref('users').get(); const val=snap.val()||{};
+    const users=Object.entries(val).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
+    if(!users.length){el.innerHTML='<div style="color:var(--tx2);font-size:13px;">No users yet</div>';return;}
+    el.innerHTML=users.map(([uid,u])=>`
+      <div class="urow">
+        <div class="urinfo">
+          <div style="font-weight:700">${esc(u.name||u.username)}</div>
+          <div style="font-size:12px;color:var(--tx2)">@${esc(u.username)} · ${u.role}${u.store?' · '+u.store:''}</div>
+        </div>
+        <div class="uracts">
+          <span class="chip ${u.disabled?'crd':'cgr'}">${u.disabled?'Off':'On'}</span>
+          <button class="btn bxs bsc" onclick="openUM('${uid}')">Edit</button>
+          <button class="btn bxs ${u.disabled?'bok':'bwn'}" onclick="toggleU('${uid}',${!!u.disabled})">${u.disabled?'Enable':'Disable'}</button>
+          ${uid!==A.user.uid?`<button class="btn bxs bdn" onclick="delU('${uid}')">✕</button>`:''}
+        </div>
+      </div>`).join('');
+  } catch(e){el.innerHTML=`<div class="info ird">Error: ${e.message}</div>`;}
+}
+
+function openUM(uid) {
+  editUID=uid;
+  if (uid) {
+    db.ref('users/'+uid).get().then(snap=>{
+      const u=snap.val();
+      $('uOvlTitle').textContent='✏️ Edit User';
+      $('uN').value=u.name||''; $('uUsr').value=u.username||''; $('uPw').value='';
+      $('uRl').value=u.role||'store'; $('uSt').value=u.store||'';
+      $('uSaveBtn').textContent='Update User'; openO('uOvl');
+    });
+  } else {
+    $('uOvlTitle').textContent='➕ Add User';
+    $('uN').value=''; $('uUsr').value=''; $('uPw').value='';
+    $('uRl').value='store'; $('uSt').value='';
+    $('uSaveBtn').textContent='Create User'; openO('uOvl');
+  }
+}
+
+async function saveUser() {
+  const name=$('uN').value.trim(), username=$('uUsr').value.trim().toLowerCase();
+  const pass=$('uPw').value.trim(), role=$('uRl').value, store=$('uSt').value;
+  if (!name||!username){toast('Name and username required','err');return;}
+  if (!editUID&&(!pass||pass.length<4)){toast('Password min 4 characters','err');return;}
+  if (!editUID&&role==='store'&&!store){toast('Select a store for store users','err');return;}
+
+  // Username uniqueness check
+  const ex=await db.ref('users').orderByChild('username').equalTo(username).get();
+  const exV=ex.val();
+  if (exV) {
+    const exUID=Object.keys(exV)[0];
+    if (!editUID||exUID!==editUID){toast('Username already taken','err');return;}
+  }
+
+  const uid=editUID||username;
+  const data={uid,name,username,role,store,disabled:false};
+  if (pass) data.password=pass;
+  if (!editUID) data.createdAt=new Date().toISOString();
+
+  try {
+    if (editUID) await db.ref('users/'+editUID).update(data);
+    else await db.ref('users/'+uid).set(data);
+    toast(editUID?'✅ User updated':'✅ User created','ok');
+    closeO('uOvl'); editUID=null; loadUsers();
+  } catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function toggleU(uid,disabled) {
+  if(!confirm(`${disabled?'Enable':'Disable'} this user?`))return;
+  await db.ref('users/'+uid).update({disabled:!disabled});
+  toast(`User ${disabled?'enabled':'disabled'}`,'ok'); loadUsers();
+}
+
+async function delU(uid) {
+  if(!confirm('Delete this user permanently?'))return;
+  await db.ref('users/'+uid).remove();
+  toast('User deleted','ok'); loadUsers();
+}
+
+async function changeMyCredentials() {
+  const newU=$('myU').value.trim().toLowerCase();
+  const newP=$('myP').value.trim();
+  if (!newU&&!newP){toast('Enter new username or password','err');return;}
+  if (newP&&newP.length<4){toast('Min 4 characters','err');return;}
+  const upd={};
+  if (newU) upd.username=newU;
+  if (newP) upd.password=newP;
+  try {
+    await db.ref('users/'+A.user.uid).update(upd);
+    Object.assign(A.user,upd);
+    $('uNm').textContent=A.user.name||A.user.username;
+    toast('✅ Credentials updated! Remember your new login.','ok',4000);
+    $('myU').value=''; $('myP').value='';
+  } catch(e){toast('Error: '+e.message,'err');}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CAMERA / BARCODE SCANNER
+// ═══════════════════════════════════════════════════════════
+function openCam(mode) {
+  A.camMode=mode; openO('camOvl');
+  if (A.qrScanner){A.qrScanner.stop().catch(()=>{});A.qrScanner=null;}
+  $('qr-reader').innerHTML='';
+  A.qrScanner=new Html5Qrcode('qr-reader');
+  A.qrScanner.start(
+    {facingMode:A.camFace},
+    {fps:10,qrbox:{width:240,height:100}},
+    code=>{
+      stopCam();
+      const c=code.trim().toUpperCase();
+      if (A.camMode==='pi'){$('piCode').value=c;lookupCode();goSec('pi',null);}
+      else {$('sohQ').value=c;renderSOH();goSec('soh',null);}
+      toast(`✅ Scanned: ${c}`,'ok');
+    },()=>{}
+  ).catch(e=>{toast('Camera error: '+e,'err');closeO('camOvl');});
+}
+
+function stopCam() {
+  if (A.qrScanner){A.qrScanner.stop().catch(()=>{});A.qrScanner=null;}
+  $('qr-reader').innerHTML=''; closeO('camOvl');
+}
+
+function flipCam() {
+  A.camFace=A.camFace==='environment'?'user':'environment';
+  stopCam(); openCam(A.camMode);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BARCODE GENERATOR
+// ═══════════════════════════════════════════════════════════
+function genBC() {
+  const raw=$('bcIn').value.trim(); if(!raw){toast('Enter product codes','err');return;}
+  const codes=[...new Set(raw.split('\n').map(c=>c.trim()).filter(Boolean))];
+  if(codes.length>500){toast('Max 500 codes','err');return;}
+  const grid=$('bcGrid'); grid.innerHTML=''; let ok=0;
+  codes.forEach(code=>{
+    const row=A.sohMap[code.toUpperCase()]||{};
+    const el=document.createElement('div'); el.className='bcl';
+    const br=document.createElement('div'); br.className='lb'; br.textContent='KIDZA';
+    const inf=document.createElement('div'); inf.className='li2';
+    inf.textContent=[row.Class,row.MRP?'₹'+row.MRP:null].filter(Boolean).join(' · ');
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    const cd=document.createElement('div'); cd.className='lc'; cd.textContent=code;
+    el.append(br); if(inf.textContent)el.append(inf); el.append(svg); el.append(cd);
+    grid.appendChild(el);
+    try{JsBarcode(svg,code,{format:'CODE128',width:1.5,height:34,displayValue:false,margin:1,background:'#fff',lineColor:'#000'});ok++;}
+    catch(e){cd.textContent='⚠ '+code;}
   });
-  const sorted=Object.values(sc).sort((a,b)=>(b.best?.pct||0)-(a.best?.pct||0));
-  const rC=(i)=>i===0?'r1':i===1?'r2':i===2?'r3':'rN';
-  const rI=(i)=>i===0?'1st':i===1?'2nd':i===2?'3rd':(i+1)+'th';
-  $('adm-lb').innerHTML=sorted.map((r,i)=>`
-    <div class="lb-item"><div class="lb-rank ${rC(i)}">${rI(i)}</div>
-      <div style="flex:1;"><div class="lb-name">${esc(r.name)}</div></div>
-      <div class="lb-pct">${r.best?r.best.pct+'%':'&mdash;'}</div></div>`).join('');
+  $('bcCnt').textContent=ok; $('bcWrap').style.display='block';
+  toast(`✅ ${ok} labels generated`,'ok');
 }
 
-function reassign(uid,cid){
-  if(!confirm('Reset all attempts for this user on this course?'))return;
-  delete DB.attempts[uid+'_'+cid];
-  const c=DB.courses.find(x=>x.id===cid);
-  if(c&&c.materials)c.materials.forEach(m=>delete DB.matProg[uid+'_'+cid+'_'+m.id]);
-  DB.results=DB.results.filter(r=>!(r.uid===uid&&r.cid===cid));
-  sDB();alert('Reset done. User can attempt again.');renderAdmRe();
-}
-function exportCSV(){
-  if(!DB.results.length){alert('No results.');return;}
-  let csv='Name,Course,Score,Total,Pct,Mode,Status,Attempt,Date\n';
-  DB.results.forEach(r=>{csv+=r.name+','+r.cname+','+r.score+','+r.total+','+r.pct+'%,'+r.mode+','+(r.passed?'PASS':'FAIL')+','+r.attempt+','+r.date+'\n';});
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='kidza_results.csv';a.click();
+function printBC() {
+  const g=$('bcGrid'); if(!g.children.length){toast('Generate labels first','err');return;}
+  const pa=$('printArea');
+  pa.innerHTML=`<div style="padding:8mm;">${g.outerHTML}</div>`;
+  pa.style.display='block';
+  $('appShell').style.display='none';
+  window.print();
+  $('appShell').style.display='flex';
+  pa.style.display='none';
 }
 
-// ═══════════════════════
-// COURSE MODAL
-// ═══════════════════════
-let ECO=null,TM=[],TQ=[];
-function openCModal(cid){
-  ECO=cid;
-  if(cid){
-    const c=DB.courses.find(x=>x.id===cid);
-    $('m-co-ttl').textContent='Edit Course';
-    $('mc-n').value=c.name;$('mc-d').value=c.desc||'';
-    $('mc-p').value=c.passPercent||60;$('mc-tk').value=c.timerK||30;$('mc-ts').value=c.timerS||10;
-    TM=JSON.parse(JSON.stringify(c.materials||[]));TQ=JSON.parse(JSON.stringify(c.questions||[]));
-    renderAsgn(c.assignedUsers||[]);
-  }else{
-    $('m-co-ttl').textContent='New Course';
-    $('mc-n').value='';$('mc-d').value='';$('mc-p').value=60;$('mc-tk').value=30;$('mc-ts').value=10;
-    TM=[];TQ=[];renderAsgn([]);
-  }
-  renderMats();renderQs();openM('m-co');
-}
-function addMat(){TM.push({id:nuid(),type:'video',title:'',url:''});renderMats();}
-function renderMats(){
-  $('mc-mats').innerHTML=TM.map((m,i)=>`
-    <div class="qb"><div class="qb-h"><b style="font-size:12px;">Mat ${i+1}</b><button class="btn btn-danger btn-xs" onclick="TM.splice(${i},1);renderMats()">Remove</button></div>
-      <div class="row mb1">
-        <select onchange="TM[${i}].type=this.value" style="flex:0 0 90px;font-size:13px;padding:8px;">
-          ${['video','ppt','pdf','gif','image'].map(t=>'<option value="'+t+'"'+(m.type===t?' selected':'')+'>'+t.toUpperCase()+'</option>').join('')}
-        </select>
-        <input placeholder="Title" value="${esc(m.title)}" oninput="TM[${i}].title=this.value" style="flex:1;">
-      </div>
-      <input placeholder="URL (YouTube, PPT, PDF, image link...)" value="${esc(m.url||'')}" oninput="TM[${i}].url=this.value">
-    </div>`).join('')||'<p class="muted" style="font-size:13px;margin-bottom:8px;">No materials.</p>';
-}
-function addQ(){TQ.push({id:nuid(),question:'',options:['','','',''],answer:0});renderQs();}
-function renderQs(){
-  $('mc-qs').innerHTML=TQ.map((q,qi)=>`
-    <div class="qb"><div class="qb-h"><b style="font-size:12px;">Q${qi+1}</b><button class="btn btn-danger btn-xs" onclick="TQ.splice(${qi},1);renderQs()">Remove</button></div>
-      <input placeholder="Question text" value="${esc(q.question)}" oninput="TQ[${qi}].question=this.value" style="margin-bottom:10px;">
-      ${q.options.map((o,oi)=>'<div class="opt-row"><input type="radio" name="ca'+qi+'" '+(q.answer===oi?'checked':'')+' onchange="TQ['+qi+'].answer='+oi+'" title="Mark correct"><div class="opt-letter" style="flex-shrink:0;background:#f1f5f9;color:var(--mid);">'+LT[oi]+'</div><input type="text" placeholder="Option '+LT[oi]+'" value="'+esc(o)+'" oninput="TQ['+qi+'].options['+oi+']=this.value"></div>').join('')}
-      <p style="font-size:11px;color:var(--muted);margin-top:4px;">Radio = correct answer</p>
-    </div>`).join('')||'<p class="muted" style="font-size:13px;margin-bottom:8px;">No questions.</p>';
-}
-function renderAsgn(cur){
-  // Always re-read DB.users for freshest list
-  const staff=DB.users.filter(u=>u.role==='staff');
-  $('mc-asgn').innerHTML=staff.map(u=>`
-    <label style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;cursor:pointer;background:#f8fafc;border:1px solid var(--border);margin-bottom:6px;">
-      <input type="checkbox" id="asg-${u.id}" ${cur.includes(u.id)?'checked':''} style="width:18px;height:18px;accent-color:var(--blue);">
-      <div class="av" style="width:30px;height:30px;font-size:12px;">${u.name[0]}</div>
-      <span style="font-size:14px;font-weight:600;">${esc(u.name)}</span>
-      <span class="muted" style="font-size:12px;">@${esc(u.username)}</span>
-    </label>`).join('')||'<p class="muted" style="font-size:13px;">No staff users yet. Add users first.</p>';
-}
-function saveCourse(){
-  const name=$('mc-n').value.trim();
-  if(!name){alert('Course name required.');return;}
-  if(!TQ.length){alert('Add at least one question.');return;}
-  for(const q of TQ){if(!q.question.trim()||q.options.some(o=>!o.trim())){alert('Fill all question fields.');return;}}
-  const asgnd=DB.users.filter(u=>u.role==='staff'&&$('asg-'+u.id)?.checked).map(u=>u.id);
-  const co={id:ECO||nuid(),name,desc:$('mc-d').value.trim(),passPercent:parseInt($('mc-p').value)||60,timerK:parseInt($('mc-tk').value)||30,timerS:parseInt($('mc-ts').value)||10,assignedUsers:asgnd,materials:TM,questions:TQ};
-  if(ECO){const i=DB.courses.findIndex(c=>c.id===ECO);DB.courses[i]=co;}else DB.courses.push(co);
-  sDB();closeM('m-co');renderAdmCo();
-  asgnd.forEach(uid=>{const u=DB.users.find(x=>x.id===uid);if(u)pushNotif('New Quiz Assigned','You have a new quiz: '+name);});
-  alert('Course saved!');
-}
-function delCourse(cid){
-  if(!confirm('Delete this course and all results?'))return;
-  DB.courses=DB.courses.filter(c=>c.id!==cid);DB.results=DB.results.filter(r=>r.cid!==cid);
-  Object.keys(DB.attempts).forEach(k=>{if(k.split('_')[1]===cid)delete DB.attempts[k];});
-  sDB();renderAdmCo();
+function clearBC() {
+  $('bcGrid').innerHTML=''; $('bcWrap').style.display='none';
+  $('bcCnt').textContent='0'; $('bcIn').value='';
 }
 
-// ═══════════════════════
-// USER MODAL
-// ═══════════════════════
-let EUO=null;
-function openUModal(id){
-  EUO=id;
-  if(id){const u=DB.users.find(x=>x.id===id);$('m-us-ttl').textContent='Edit User';$('mu-n').value=u.name;$('mu-u').value=u.username;$('mu-p').value=u.password;$('mu-r').value=u.role;}
-  else{$('m-us-ttl').textContent='New User';$('mu-n').value='';$('mu-u').value='';$('mu-p').value='';$('mu-r').value='staff';}
-  $('mu-err').classList.add('hidden');openM('m-us');
+// ═══════════════════════════════════════════════════════════
+//  OVERLAY CLOSE ON BACKGROUND CLICK
+// ═══════════════════════════════════════════════════════════
+document.querySelectorAll('.ovl').forEach(o=>{
+  o.addEventListener('click',e=>{
+    if(e.target===o){
+      if(o.id==='camOvl') stopCam(); else o.classList.remove('open');
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  DROP ZONE
+// ═══════════════════════════════════════════════════════════
+const dz=$('dzn');
+if(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault();dz.classList.remove('drag');
+    const f=e.dataTransfer.files[0];
+    if(f){const ev={target:{files:[f],value:''}};handleCSV(ev);}
+  });
 }
-function saveUser(){
-  const name=$('mu-n').value.trim();
-  const uname=$('mu-u').value.trim().toLowerCase().replace(/\s+/g,'');
-  const pass=$('mu-p').value;
-  const role=$('mu-r').value;
-  if(!name||!uname||!pass){showUE('All fields required.');return;}
-  if(DB.users.find(u=>u.username.toLowerCase()===uname&&u.id!==EUO)){showUE('Username already taken.');return;}
-  if(EUO){const i=DB.users.findIndex(u=>u.id===EUO);DB.users[i]={...DB.users[i],name,username:uname,password:pass,role};}
-  else DB.users.push({id:nuid(),name,username:uname,password:pass,role});
-  sDB();closeM('m-us');renderAdmUs();
-  alert('User saved! They can now log in with username: '+uname);
-}
-function showUE(m){$('mu-err').textContent=m;$('mu-err').classList.remove('hidden');}
-function delUser(id){
-  if(!confirm('Delete this user?'))return;
-  DB.users=DB.users.filter(u=>u.id!==id);sDB();renderAdmUs();
-}
-
-// ═══════════════════════
-// KEYBOARD
-// ═══════════════════════
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('s-login').classList.contains('active'))doLogin();});
-
-// ═══════════════════════
-// INIT
-// ═══════════════════════
-(async function init(){
-  // Initialise Firebase
-  const firebaseOK = initFirebase();
-
-  // Show splash while loading
-  const splash = document.createElement('div');
-  splash.id = 'sync-splash';
-  splash.innerHTML = `
-    <div style="font-family:'Sora',sans-serif;font-size:30px;font-weight:800;color:#fff;letter-spacing:1px;margin-bottom:8px;">KIDZA</div>
-    <div style="color:rgba(255,255,255,.75);font-size:13px;margin-bottom:20px;">${firebaseOK ? 'Syncing across devices…' : 'Loading…'}</div>
-    <div style="width:60px;height:4px;border-radius:50px;background:rgba(255,255,255,.3);overflow:hidden;">
-      <div style="height:100%;background:#fff;border-radius:50px;animation:syncbar 1.1s ease-in-out infinite;"></div>
-    </div>`;
-  splash.style.cssText = 'position:fixed;inset:0;background:#1a56db;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
-  document.body.appendChild(splash);
-  const style = document.createElement('style');
-  style.textContent = '@keyframes syncbar{0%{width:0%;margin-left:0}50%{width:100%;margin-left:0}100%{width:0%;margin-left:100%}}';
-  document.head.appendChild(style);
-
-  await lDB();
-  splash.remove();
-
-  // Set up realtime sync status badge + listener (added)
-  if(firebaseOK){
-    setSyncStatus(navigator.onLine===false?'offline':'online', navigator.onLine===false?'Offline':'Online');
-    listenForChanges();
-  }else{
-    setSyncStatus('offline','Offline');
-  }
-
-  // Show Firebase setup banner if not yet configured
-  if(!FIREBASE_CONFIGURED){
-    const banner = document.createElement('div');
-    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#92400e;color:#fff;font-size:12px;padding:10px 14px;z-index:8000;text-align:center;line-height:1.5;';
-    banner.innerHTML = "⚠️ <b>Offline mode</b> — data is device-only. <a href='#' onclick='this.parentElement.style.display=\"none\"' style='color:#fcd34d;text-decoration:underline;'>Dismiss</a>";
-    document.body.appendChild(banner);
-  }
-
-  if(restoreS()){
-    if(CUR.user.role==='admin'){NS.length=0;NS.push('s-admin');renderAdmin();showScreen('s-admin');}
-    else{NS.length=0;NS.push('s-home');goHome();}
-  }else{showScreen('s-login');}
-})();
 </script>
 </body>
 </html>
