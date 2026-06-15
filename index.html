@@ -1,2528 +1,1302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Inventory Management System</title>
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
-<!-- Barcode Scanner -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<!-- JsBarcode for label generation -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
-<!-- PapaParse for CSV -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<!-- SheetJS for Excel export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- jsPDF for PDF export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Kidza Staff Training</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Firebase Realtime Database SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
-:root {
-  --bg: #f0f4f9;
-  --surface: #ffffff;
-  --surface2: #f5f7fb;
-  --surface3: #eaeff7;
-  --border: #dde3ee;
-  --accent: #2563eb;
-  --accent-light: #eff4ff;
-  --accent2: #7c3aed;
-  --success: #16a34a;
-  --success-light: #f0fdf4;
-  --warning: #d97706;
-  --warning-light: #fffbeb;
-  --danger: #dc2626;
-  --danger-light: #fef2f2;
-  --text: #111827;
-  --text2: #6b7280;
-  --text3: #9ca3af;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --blue:#1a56db;--blue2:#1e40af;--blue3:#3b82f6;--blue-light:#eff6ff;--blue-muted:#dbeafe;
+  --black:#0f172a;--dark:#1e293b;--mid:#475569;--muted:#94a3b8;--border:#e2e8f0;
+  --bg:#f8fafc;--white:#ffffff;
+  --success:#16a34a;--danger:#dc2626;--warn:#d97706;--warn-bg:#fffbeb;
+  --radius:16px;--shadow:0 4px 24px rgba(15,23,42,.08);
+  --font:'DM Sans',sans-serif;--display:'Sora',sans-serif;
+  /* ── ANDROID MATERIAL DESIGN 3 TOKENS (added) ── */
+  --android-primary:#1a56db;--android-secondary:#3b82f6;--android-surface:#ffffff;--android-background:#f8fafc;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;-webkit-tap-highlight-color:transparent;}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
-
-/* ══ AUTH ══ */
-#authScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,#eff6ff 0%,#f5f3ff 100%);}
-.auth-wrap{width:100%;max-width:400px;}
-.auth-brand{text-align:center;margin-bottom:28px;}
-.auth-icon{width:56px;height:56px;background:var(--accent);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px;box-shadow:0 4px 16px rgba(37,99,235,.3);}
-.auth-brand h1{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px;}
-.auth-brand p{font-size:12px;color:var(--text2);margin-top:2px;}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow);}
-.auth-card h2{font-size:18px;font-weight:700;margin-bottom:4px;}
-.auth-card .sub{font-size:13px;color:var(--text2);margin-bottom:22px;}
-.field{margin-bottom:14px;}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
-.field input,.field select{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;}
-.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.input-icon-wrap{position:relative;}
-.input-icon-wrap input{padding-right:40px;}
-.input-icon-wrap .eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px;padding:2px;}
-.remember-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;font-size:13px;}
-.remember-row label{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text2);}
-.remember-row input[type=checkbox]{accent-color:var(--accent);}
-.forgot-link{color:var(--accent);cursor:pointer;font-size:13px;text-decoration:none;}
-.forgot-link:hover{text-decoration:underline;}
-
-/* ══ BUTTONS ══ */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.btn:disabled{opacity:.5;cursor:not-allowed;}
-.btn-primary{background:var(--accent);color:#fff;}
-.btn-primary:hover:not(:disabled){background:#1d4ed8;}
-.btn-success{background:var(--success);color:#fff;}
-.btn-success:hover:not(:disabled){background:#15803d;}
-.btn-danger{background:var(--danger);color:#fff;}
-.btn-danger:hover:not(:disabled){background:#b91c1c;}
-.btn-warning{background:var(--warning);color:#fff;}
-.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border);}
-.btn-secondary:hover:not(:disabled){background:var(--surface2);}
-.btn-ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent);}
-.btn-ghost:hover:not(:disabled){background:var(--accent-light);}
-.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px;}
-.btn-xs{padding:4px 8px;font-size:11px;border-radius:5px;}
+/* ── SYNC STATUS BADGE (added) ── */
+#sync-status{position:fixed;top:8px;right:8px;z-index:7000;font-size:11px;font-weight:700;padding:5px 12px;border-radius:50px;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:.25s;}
+#sync-status .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+#sync-status.online{background:#dcfce7;color:var(--success);}
+#sync-status.online .dot{background:var(--success);}
+#sync-status.offline{background:#fee2e2;color:var(--danger);}
+#sync-status.offline .dot{background:var(--danger);}
+#sync-status.syncing{background:var(--blue-muted);color:var(--blue2);}
+#sync-status.syncing .dot{background:var(--blue2);animation:blink 1s infinite;}
+/* ── Ripple effect for buttons/cards (Android touch feedback) ── */
+.btn,.item-row,.opt-card,.qtype-card,.tab-btn{position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:rippleAnim .5s ease-out;pointer-events:none;}
+.opt-card .ripple,.item-row .ripple,.qtype-card .ripple,.tab-btn .ripple{background:rgba(26,86,219,.18);}
+@keyframes rippleAnim{to{transform:scale(2.6);opacity:0;}}
+/* ── Safe-area support for notches / nav bars ── */
+body{padding-bottom:env(safe-area-inset-bottom);}
+.app-header{padding-top:max(52px,env(safe-area-inset-top));}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--black);overflow-x:hidden;}
+.screen{display:none;min-height:100vh;padding-bottom:24px;}
+.screen.active{display:block;animation:fadeUp .28s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.app-header{background:linear-gradient(135deg,var(--blue2) 0%,var(--blue) 100%);padding:52px 20px 24px;border-radius:0 0 28px 28px;position:relative;overflow:hidden;}
+.app-header::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06);}
+.app-header::after{content:'';position:absolute;bottom:-60px;left:-20px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04);}
+.hd-brand{font-family:var(--display);font-size:28px;font-weight:800;color:#fff;letter-spacing:1px;position:relative;z-index:1;}
+.hd-sub{font-size:13px;color:rgba(255,255,255,.65);margin-top:2px;position:relative;z-index:1;}
+.hd-row{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
+.back-bar{display:flex;align-items:center;gap:10px;padding:16px 16px 0;}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--white);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.06);flex-shrink:0;}
+.back-title{font-family:var(--display);font-size:16px;font-weight:700;}
+.card{background:var(--white);margin:0 14px 14px;padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);}
+.pg-title{font-family:var(--display);font-size:21px;font-weight:800;margin-bottom:4px;}
+.pg-sub{font-size:13px;color:var(--muted);}
+.lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+input,select,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);font-size:15px;font-family:var(--font);background:var(--white);color:var(--black);outline:none;transition:.2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+textarea{resize:vertical;min-height:72px;}
+.iw{margin-bottom:14px;}
+.btn{border:none;padding:13px 20px;border-radius:50px;cursor:pointer;font-weight:700;font-size:14px;font-family:var(--font);transition:.18s;display:inline-flex;align-items:center;justify-content:center;gap:7px;}
+.btn:active{transform:scale(.97);}
+.btn-blue{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 4px 16px rgba(26,86,219,.28);}
+.btn-outline{background:var(--white);border:1.5px solid var(--border);color:var(--dark);}
+.btn-success{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;}
+.btn-danger{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;}
+.btn-warn{background:linear-gradient(135deg,#d97706,#b45309);color:#fff;}
+.btn-ghost{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);color:#fff;}
 .btn-full{width:100%;}
-.btn-icon{width:36px;height:36px;padding:0;border-radius:8px;}
-
-/* ══ APP SHELL ══ */
-#appShell{display:none;flex-direction:column;min-height:100vh;}
-.topbar{background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 16px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
-.topbar-left{display:flex;align-items:center;gap:10px;}
-.topbar-logo{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;}
-.topbar-title{font-weight:700;font-size:15px;letter-spacing:-.3px;}
-.topbar-right{display:flex;align-items:center;gap:8px;}
-.user-chip{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 4px;}
-.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
-.user-avatar.admin{background:var(--accent2);}
-.user-name{font-size:12px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.logout-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:18px;padding:4px;border-radius:6px;}
-.logout-btn:hover{background:var(--danger-light);color:var(--danger);}
-
-/* ══ MAIN CONTENT ══ */
-.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.main-content{flex:1;padding:16px;padding-bottom:76px;overflow-y:auto;max-width:720px;margin:0 auto;width:100%;}
-
-/* ══ BOTTOM NAV ══ */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1.5px solid var(--border);display:flex;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.06);}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;color:var(--text3);border:none;background:none;font-size:10px;font-weight:500;gap:3px;transition:color .15s;min-height:56px;}
-.nav-btn.active{color:var(--accent);}
-.nav-btn svg{width:22px;height:22px;}
-.nav-btn .nav-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);display:none;position:absolute;top:6px;right:calc(50% - 14px);}
-.nav-btn.has-badge .nav-dot{display:block;}
-
-/* ══ SECTIONS ══ */
-.section{display:none;}
-.section.active{display:block;}
-.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
-.sec-header h2{font-size:17px;font-weight:800;letter-spacing:-.4px;}
-.sec-header-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
-
-/* ══ CARDS ══ */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
-.card-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
-.card-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-
-/* ══ STAT CARDS ══ */
-.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;}
-.stat-grid-3{grid-template-columns:repeat(3,1fr);}
-@media(min-width:500px){.stat-grid{grid-template-columns:repeat(3,1fr);}}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
-.stat-val{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1;}
-.stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;font-weight:500;}
-.stat-change{font-size:11px;margin-top:6px;font-weight:600;}
-.stat-change.up{color:var(--success);}
-.stat-change.down{color:var(--danger);}
-.stat-card.accent::before{background:var(--accent);}
-.stat-card.success::before{background:var(--success);}
-.stat-card.warning::before{background:var(--warning);}
-.stat-card.danger::before{background:var(--danger);}
-.stat-card.purple::before{background:var(--accent2);}
-
-/* ══ CHIPS / BADGES ══ */
-.chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
-.chip-blue{background:var(--accent-light);color:var(--accent);}
-.chip-green{background:var(--success-light);color:var(--success);}
-.chip-yellow{background:var(--warning-light);color:var(--warning);}
-.chip-red{background:var(--danger-light);color:var(--danger);}
-.chip-purple{background:#f5f3ff;color:var(--accent2);}
-.chip-gray{background:var(--surface3);color:var(--text2);}
-.badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:10px;font-weight:700;background:var(--danger);color:#fff;}
-
-/* ══ TABLES ══ */
-.tbl-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border);}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:400px;}
-th{background:var(--surface2);padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;letter-spacing:.3px;text-transform:uppercase;}
-td{padding:9px 12px;border-top:1px solid var(--border);vertical-align:middle;}
-tr:hover td{background:rgba(37,99,235,.03);}
-.td-code{font-weight:700;font-family:monospace;font-size:13px;}
-.var-pos{color:var(--success);font-weight:700;}
-.var-neg{color:var(--danger);font-weight:700;}
-.var-zero{color:var(--text3);}
-
-/* ══ SEARCH / FILTER BAR ══ */
-.search-bar{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
-.search-input-wrap{flex:1;position:relative;}
-.search-input-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3);pointer-events:none;}
-.search-input{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px 9px 34px;color:var(--text);font-size:14px;outline:none;}
-.search-input:focus{border-color:var(--accent);}
-.filter-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;}
-.filter-chip{flex-shrink:0;padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-.filter-chip:hover:not(.active){border-color:var(--accent);color:var(--accent);}
-
-/* ══ SCAN AREA ══ */
-.scan-box{background:var(--surface2);border:2px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:12px;transition:border-color .2s;}
-.scan-box.active{border-color:var(--accent);background:var(--accent-light);}
-.scan-box-icon{font-size:32px;margin-bottom:8px;}
-.scan-box p{font-size:12px;color:var(--text2);margin-bottom:10px;}
-.scan-input{width:100%;background:var(--surface);border:2px solid var(--accent);border-radius:var(--radius-sm);padding:13px 16px;color:var(--text);font-size:18px;font-weight:700;letter-spacing:3px;text-align:center;outline:none;font-family:monospace;}
-.scan-input:focus{box-shadow:0 0 0 3px rgba(37,99,235,.15);}
-
-/* ══ PI ITEM ROW ══ */
-.pi-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid transparent;}
-.pi-row:hover{border-color:var(--border);}
-.pi-row-info{min-width:0;}
-.pi-row-code{font-weight:700;font-size:13px;font-family:monospace;}
-.pi-row-meta{font-size:11px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.qty-input{width:64px;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:6px 8px;text-align:center;font-size:14px;font-weight:700;color:var(--text);outline:none;}
-.qty-input:focus{border-color:var(--accent);}
-.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:4px;border-radius:5px;transition:color .15s;}
-.del-btn:hover{color:var(--danger);background:var(--danger-light);}
-
-/* ══ PROGRESS ══ */
-.progress-wrap{background:var(--surface3);border-radius:20px;height:8px;overflow:hidden;margin-top:6px;}
-.progress-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease;}
-
-/* ══ CAMERA / SCANNER MODAL ══ */
-#cameraModal .modal{max-width:420px;}
-#qr-reader{width:100%;border-radius:8px;overflow:hidden;background:#000;}
-#qr-reader video{width:100% !important;border-radius:8px;}
-.scanner-controls{display:flex;gap:8px;margin-top:10px;}
-
-/* ══ MODALS ══ */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(17,24,39,.5);z-index:300;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px);}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);}
-.modal h3{font-size:16px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-.modal-footer{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap;}
-
-/* ══ TOAST ══ */
-#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:999;pointer-events:none;display:flex;flex-direction:column;gap:6px;align-items:center;}
-.toast-msg{background:rgba(17,24,39,.9);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:500;box-shadow:var(--shadow);animation:toastIn .2s ease;white-space:nowrap;}
-.toast-msg.success{background:rgba(22,163,74,.95);}
-.toast-msg.error{background:rgba(220,38,38,.95);}
-@keyframes toastIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-/* ══ BARCODE LABELS ══ */
-.bc-grid{display:grid;grid-template-columns:repeat(auto-fill,133px);gap:5px;padding:12px;background:#fff;border-radius:8px;}
-.bc-label{display:flex;flex-direction:column;align-items:center;width:133px;height:76px;border:1px solid #aaa;padding:3px 2px 2px;overflow:hidden;background:#fff;page-break-inside:avoid;}
-.bc-label .lbl-brand{font-size:8px;font-weight:900;color:#000;font-family:Arial,sans-serif;letter-spacing:.5px;}
-.bc-label .lbl-info{font-size:6.5px;color:#333;font-family:Arial,sans-serif;margin-bottom:1px;text-align:center;}
-.bc-label svg,.bc-label canvas{width:100% !important;height:34px !important;}
-.bc-label .lbl-code{font-size:7.5px;color:#000;font-family:'Courier New',monospace;margin-top:1px;letter-spacing:1px;}
-
-/* ══ VARIANCE HIGHLIGHT ══ */
-.var-bar{border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;border-left:4px solid transparent;}
-.var-bar.high{border-color:var(--danger);background:var(--danger-light);}
-.var-bar.med{border-color:var(--warning);background:var(--warning-light);}
-.var-bar.low{border-color:var(--success);background:var(--success-light);}
-
-/* ══ LIST ITEMS ══ */
-.list-item{padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
-.list-item:hover{border-color:var(--accent);box-shadow:var(--shadow-sm);}
-.list-item-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
-.list-item-main{font-weight:700;font-size:14px;}
-.list-item-sub{font-size:12px;color:var(--text2);margin-top:3px;}
-
-/* ══ DIVIDER ══ */
-.divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
-
-/* ══ INFO BOX ══ */
-.info-box{border-radius:var(--radius-sm);padding:12px;font-size:13px;border:1px solid;margin-bottom:10px;}
-.info-box.blue{background:var(--accent-light);border-color:rgba(37,99,235,.2);color:#1e40af;}
-.info-box.yellow{background:var(--warning-light);border-color:rgba(217,119,6,.2);color:#92400e;}
-.info-box.green{background:var(--success-light);border-color:rgba(22,163,74,.2);color:#166534;}
-.info-box.red{background:var(--danger-light);border-color:rgba(220,38,38,.2);color:#991b1b;}
-
-/* ══ FORM SECTION ══ */
-.form-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
-.form-section h4{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text);}
-.input-row{display:flex;gap:8px;align-items:flex-end;}
-.input-row .field{flex:1;margin-bottom:0;}
-.select-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none;}
-.select-input:focus{border-color:var(--accent);}
-textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;resize:vertical;width:100%;outline:none;font-family:inherit;}
-textarea:focus{border-color:var(--accent);}
-.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;}
-.toggle-track{width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;transition:background .2s;}
-.toggle-track.on{background:var(--accent);}
-.toggle-thumb{width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
-.toggle-track.on .toggle-thumb{left:18px;}
-code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:'Courier New',monospace;font-size:12px;color:var(--accent);}
-
-/* ══ EMPTY STATE ══ */
-.empty{text-align:center;padding:40px 20px;color:var(--text2);}
-.empty .empty-icon{font-size:44px;margin-bottom:10px;opacity:.7;}
-.empty h3{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
-.empty p{font-size:13px;}
-
-/* ══ PRINT ══ */
-@media print{
-  body{background:#fff;}
-  #authScreen,#appShell,#toast,.modal-overlay{display:none !important;}
-  #printArea{display:block !important;}
-  .bc-grid{display:grid;grid-template-columns:repeat(7,133px);gap:4px;padding:0;}
-}
-#printArea{display:none;}
-
-/* ══ SPINNER ══ */
-.spinner{width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;font-size:14px;color:var(--text2);backdrop-filter:blur(2px);}
-.loading-overlay.hidden{display:none;}
-
-/* ══ WEEK BADGE ══ */
-.week-badge{background:var(--accent-light);color:var(--accent);border:1px solid rgba(37,99,235,.2);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;}
-
-/* ══ APPROVAL ROW ══ */
-.approval-row{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px;gap:8px;flex-wrap:wrap;}
-.approval-row-info{flex:1;min-width:0;}
-.approval-row-actions{display:flex;gap:6px;flex-shrink:0;}
-
-/* ══ OFFLINE BANNER ══ */
-#offlineBanner{display:none;background:var(--warning);color:#fff;font-size:12px;font-weight:600;text-align:center;padding:6px;position:sticky;top:54px;z-index:99;}
-
-/* ══ DESKTOP SIDEBAR (≥768px) ══ */
-@media(min-width:768px){
-  .main-content{padding:20px 24px 24px;max-width:900px;}
-  .stat-grid{grid-template-columns:repeat(3,1fr);}
-  .stat-grid-3{grid-template-columns:repeat(3,1fr);}
-  .bottom-nav{display:none;}
-  .desktop-nav{display:flex !important;}
-  .main-content{padding-bottom:24px;}
-}
-.desktop-nav{display:none;flex-direction:column;width:220px;background:var(--surface);border-right:1.5px solid var(--border);padding:16px 12px;gap:2px;flex-shrink:0;position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;}
-.desktop-nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
-.desktop-nav-item:hover{background:var(--surface2);color:var(--text);}
-.desktop-nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:700;}
-.desktop-nav-item svg{width:18px;height:18px;flex-shrink:0;}
-.desktop-nav-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:8px 12px 4px;}
-.layout-body{display:flex;flex:1;overflow:hidden;}
+.btn-sm{padding:9px 14px;font-size:13px;}
+.btn-xs{padding:6px 10px;font-size:11px;}
+.row{display:flex;gap:10px;}
+.badge{padding:4px 10px;border-radius:50px;font-size:11px;font-weight:700;letter-spacing:.3px;display:inline-block;}
+.bd-pass{background:#dcfce7;color:var(--success);}
+.bd-fail{background:#fee2e2;color:var(--danger);}
+.bd-warn{background:var(--warn-bg);color:var(--warn);}
+.bd-blue{background:var(--blue-muted);color:var(--blue2);}
+.bd-grey{background:#f1f5f9;color:var(--mid);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
+.stat-num{font-family:var(--display);font-size:28px;font-weight:800;color:var(--blue);}
+.stat-lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+.tabs{display:flex;background:#f1f5f9;border-radius:14px;padding:4px;margin-bottom:18px;gap:2px;}
+.tab-btn{flex:1;padding:9px 4px;border:none;background:transparent;border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;font-family:var(--font);color:var(--muted);transition:.2s;}
+.tab-btn.active{background:var(--white);color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.08);font-weight:700;}
+.item-row{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:1.5px solid var(--border);margin-bottom:10px;background:var(--white);cursor:pointer;transition:.18s;}
+.item-row:hover{border-color:var(--blue3);background:var(--blue-light);}
+.item-row.done{border-color:#86efac;background:#f0fdf4;cursor:default;}
+.item-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ic-video{background:#fee2e2;}.ic-ppt{background:#fff7ed;}.ic-pdf{background:#eff6ff;}.ic-img{background:#fdf4ff;}.ic-course{background:var(--blue-muted);}
+.item-info{flex:1;min-width:0;}
+.item-title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.opt-card{border:2px solid var(--border);padding:14px 16px;border-radius:14px;margin-bottom:10px;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:12px;}
+.opt-letter{width:32px;height:32px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--mid);flex-shrink:0;transition:.18s;}
+.opt-card:hover{border-color:var(--blue3);background:var(--blue-light);}
+.opt-card:hover .opt-letter{background:var(--blue3);color:#fff;}
+.opt-card.sel{border-color:var(--blue);background:var(--blue-light);}
+.opt-card.sel .opt-letter{background:var(--blue);color:#fff;}
+.opt-card.correct{border-color:var(--success);background:#f0fdf4;}
+.opt-card.correct .opt-letter{background:var(--success);color:#fff;}
+.opt-card.wrong{border-color:var(--danger);background:#fef2f2;}
+.opt-card.wrong .opt-letter{background:var(--danger);color:#fff;}
+.opt-text{font-weight:600;font-size:14px;line-height:1.4;}
+.prog-bar{height:6px;background:#e2e8f0;border-radius:50px;overflow:hidden;margin-bottom:14px;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue3),var(--blue));transition:.35s;border-radius:50px;}
+.timer-pill{background:var(--blue-light);color:var(--blue2);padding:8px 16px;border-radius:50px;font-weight:800;font-size:16px;border:1.5px solid var(--blue-muted);display:flex;align-items:center;gap:5px;}
+.timer-pill.urgent{background:#fee2e2;color:var(--danger);border-color:#fecaca;animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.score-ring{width:140px;height:140px;border-radius:50%;border:6px solid var(--blue);background:var(--blue-light);margin:16px auto;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.score-ring h1{font-family:var(--display);font-size:46px;font-weight:800;color:var(--blue);line-height:1;}
+.score-ring small{font-size:13px;color:var(--muted);}
+.rev-item{padding:14px;border-radius:12px;margin-bottom:10px;font-size:13px;line-height:1.7;}
+.rev-ok{background:#f0fdf4;border-left:4px solid var(--success);}
+.rev-ng{background:#fef2f2;border-left:4px solid var(--danger);}
+.rev-skip{background:#fffbeb;border-left:4px solid var(--warn);}
+.tbl-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;min-width:360px;}
+th{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff;padding:11px 12px;text-align:left;font-size:12px;font-weight:700;white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#f8fafc;}
+.lb-item{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;margin-bottom:8px;background:var(--white);border:1.5px solid var(--border);}
+.lb-rank{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;}
+.r1{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;box-shadow:0 3px 10px rgba(251,191,36,.4);}
+.r2{background:linear-gradient(135deg,#94a3b8,#64748b);color:#fff;}
+.r3{background:linear-gradient(135deg,#cd7f32,#a16207);color:#fff;}
+.rN{background:var(--blue-light);color:var(--blue2);}
+.lb-name{font-weight:700;font-size:14px;}
+.lb-sub{font-size:12px;color:var(--muted);}
+.lb-pct{font-family:var(--display);font-size:22px;font-weight:800;color:var(--blue);}
+.lb-me{border:2px solid var(--blue);background:var(--blue-light);}
+.notif-card{display:flex;gap:12px;padding:14px;border-radius:14px;background:var(--warn-bg);border:1.5px solid #fde68a;margin:0 14px 12px;align-items:flex-start;}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--warn);display:inline-block;margin-left:4px;animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.inst-step{display:flex;gap:12px;padding:12px;background:var(--blue-light);border-radius:12px;margin-bottom:8px;align-items:flex-start;}
+.inst-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;margin-top:1px;}
+.pip-row{display:flex;align-items:center;gap:6px;}
+.pip{width:12px;height:12px;border-radius:50%;background:var(--border);}
+.pip.used{background:var(--blue);}
+.chart-wrap{position:relative;width:100%;height:190px;}
+.modal-ov{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;display:flex;align-items:flex-end;justify-content:center;}
+.modal-box{background:var(--white);border-radius:24px 24px 0 0;padding:24px 20px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;animation:slideUp .28s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-hnd{width:40px;height:4px;background:var(--border);border-radius:50px;margin:0 auto 20px;}
+.modal-ttl{font-family:var(--display);font-size:17px;font-weight:700;margin-bottom:16px;}
+.cg-ov{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:999;display:flex;align-items:center;justify-content:center;}
+.cg-box{background:var(--white);border-radius:28px;padding:32px 24px;max-width:320px;width:90%;text-align:center;position:relative;overflow:hidden;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.cg-emoji{font-size:62px;display:block;animation:bounce .7s ease infinite alternate;}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.confetti-p{position:absolute;width:7px;height:7px;border-radius:2px;animation:cfall 2.8s ease-in forwards;}
+@keyframes cfall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(430px) rotate(720deg);opacity:0}}
+.qtype-card{border:2px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;transition:.18s;display:flex;gap:14px;align-items:center;}
+.qtype-card:hover{border-color:var(--blue3);background:var(--blue-light);}
+.qtype-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.qtk{background:var(--blue-light);}.qts{background:#fff7ed;}
+.qtype-title{font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:3px;}
+.qtype-desc{font-size:12px;color:var(--muted);}
+.alert{padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px;}
+.al-warn{background:var(--warn-bg);color:#92400e;border:1px solid #fde68a;}
+.al-ok{background:#f0fdf4;color:var(--success);border:1px solid #bbf7d0;}
+.al-info{background:var(--blue-light);color:var(--blue2);border:1px solid var(--blue-muted);}
+.al-err{background:#fef2f2;color:var(--danger);border:1px solid #fecaca;}
+.qb{background:#f8fafc;border-radius:14px;padding:14px;margin-bottom:12px;border:1.5px solid var(--border);}
+.qb-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.opt-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.opt-row input[type=radio]{width:18px;height:18px;flex-shrink:0;accent-color:var(--blue);}
+.opt-row input[type=text]{flex:1;}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;flex-shrink:0;}
+.hidden{display:none!important;}
+.ctr{text-align:center;}
+.sep{border:none;border-top:1px solid var(--border);margin:14px 0;}
+.muted{color:var(--muted);}
+.mb1{margin-bottom:10px;}.mb2{margin-bottom:18px;}.mt1{margin-top:10px;}.mt2{margin-top:18px;}
+.sp{height:14px;}
 </style>
 </head>
 <body>
+<!-- SYNC STATUS BADGE (added) -->
+<div id="sync-status" class="hidden"><span class="dot"></span><span id="sync-status-text">Online</span></div>
 
-<!-- ══ LOADING ══ -->
-<div class="loading-overlay hidden" id="loadingOverlay">
-  <div class="spinner"></div>
-  <span id="loadingText">Loading...</span>
-</div>
-
-<!-- ══ PRINT AREA ══ -->
-<div id="printArea"></div>
-
-<!-- ══════════════════════════════════════════
-     AUTH SCREEN
-══════════════════════════════════════════ -->
-<div id="authScreen">
-  <div class="auth-wrap">
-    <div class="auth-brand">
-      <div class="auth-icon">📦</div>
-      <h1>Inventory Management</h1>
-      <p>System</p>
+<!-- LOGIN -->
+<div class="screen active" id="s-login">
+  <div class="app-header" style="padding-bottom:40px;">
+    <div class="hd-brand">KIDZA</div>
+    <div class="hd-sub">Staff Training Portal</div>
+  </div>
+  <div class="card" style="margin-top:-24px;position:relative;z-index:2;">
+    <div class="ctr mb2"><div class="pg-title">Welcome Back</div><div class="pg-sub">Sign in to continue your training</div></div>
+    <div class="iw"><span class="lbl">Username</span><input id="l-user" type="text" placeholder="Enter username" autocomplete="username"></div>
+    <div class="iw"><span class="lbl">Password</span><input id="l-pass" type="password" placeholder="Enter password" autocomplete="current-password"></div>
+    <div class="iw" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="l-rem" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--blue);">
+      <label for="l-rem" style="font-size:13px;color:var(--mid);cursor:pointer;">Remember me on this device</label>
     </div>
-    <div class="auth-card">
-      <h2>Welcome back</h2>
-      <p class="sub">Sign in to your account</p>
-      <div class="field">
-        <label>Email Address</label>
-        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"
-          onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <div class="input-icon-wrap">
-          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"
-            onkeydown="if(event.key==='Enter')doLogin()">
-          <button class="eye-btn" onclick="togglePasswordVisibility('loginPassword',this)" type="button">👁</button>
-        </div>
-      </div>
-      <div class="remember-row">
-        <label><input type="checkbox" id="rememberMe"> Remember me</label>
-        <span class="forgot-link" onclick="openModal('forgotPwdModal')">Forgot password?</span>
-      </div>
-      <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">
-        <span id="loginBtnText">Sign In</span>
-      </button>
-      <div id="loginError" style="color:var(--danger);font-size:12px;margin-top:10px;display:none;text-align:center;"></div>
-    </div>
+    <div id="l-err" class="alert al-err hidden"></div>
+    <button class="btn btn-blue btn-full" onclick="doLogin()">Sign In</button>
+    <p class="ctr muted mt1" style="font-size:12px;">Contact admin if you forgot credentials</p>
   </div>
 </div>
 
-<!-- Forgot Password Modal -->
-<div class="modal-overlay" id="forgotPwdModal">
-  <div class="modal" style="max-width:380px">
-    <h3>🔑 Reset Password</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Enter your email and we'll send a reset link.</p>
-    <div class="field">
-      <label>Email Address</label>
-      <input type="email" id="forgotEmail" placeholder="your@email.com">
+<!-- HOME -->
+<div class="screen" id="s-home">
+  <div class="app-header">
+    <div class="hd-row">
+      <div><div class="hd-brand">KIDZA</div><div class="hd-sub" id="h-sub">Staff Portal</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('forgotPwdModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="sendPasswordReset()">Send Reset Link</button>
+  </div>
+  <div id="notif-area"></div>
+  <div class="card" style="margin-top:-14px;position:relative;z-index:2;">
+    <div class="stat-grid" id="home-stats"></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="pg-title" style="font-size:18px;margin:0;">My Courses</div>
     </div>
+    <div id="home-courses"></div>
+  </div>
+  <div class="card">
+    <button class="btn btn-outline btn-full" onclick="goLb()">🏆 Leaderboard</button>
+  </div>
+  <div class="sp"></div>
+</div>
+
+<!-- COURSE DETAIL -->
+<div class="screen" id="s-course">
+  <div class="back-bar"><button class="back-btn" onclick="navBack()">&#8592;</button><span class="back-title" id="cd-bar">Course</span></div>
+  <div class="sp"></div>
+  <div class="card">
+    <div class="pg-title mb1" id="cd-name"></div>
+    <div class="pg-sub mb2" id="cd-desc"></div>
+    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;color:var(--mid);margin-bottom:10px;">STUDY MATERIALS</div>
+    <div id="cd-mats"></div>
+    <div class="sep"></div>
+    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;color:var(--mid);margin-bottom:10px;">QUIZ</div>
+    <div id="cd-quiz"></div>
+  </div>
+  <div class="sp"></div>
+</div>
+
+<!-- QUIZ TYPE -->
+<div class="screen" id="s-qtype">
+  <div class="back-bar"><button class="back-btn" onclick="navBack()">&#8592;</button><span class="back-title">Select Quiz Mode</span></div>
+  <div class="sp"></div>
+  <div class="card">
+    <div class="pg-title mb1">Choose Quiz Mode</div>
+    <div class="pg-sub mb2" id="qt-cname"></div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Knowledge</div>
+    <div class="qtype-card" onclick="openInst('knowledge')">
+      <div class="qtype-icon qtk">&#129504;</div>
+      <div><div class="qtype-title">Knowledge Quiz</div><div class="qtype-desc">Standard — focus on accuracy</div></div>
+    </div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-top:14px;margin-bottom:8px;">Speed</div>
+    <div class="qtype-card" style="opacity:.45;pointer-events:none;">
+      <div class="qtype-icon qts">&#9889;</div>
+      <div><div class="qtype-title">Speed Quiz</div><div class="qtype-desc">Coming soon</div></div>
+    </div>
+    <div class="alert al-info mt2" id="qt-info"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     APP SHELL
-══════════════════════════════════════════ -->
-<div id="appShell">
-  <div id="offlineBanner">⚠️ You are offline — changes will sync when connection is restored</div>
-
-  <!-- Top Bar -->
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-logo">📦</div>
-      <div class="topbar-title">Inventory Management</div>
-    </div>
-    <div class="topbar-right">
-      <div class="user-chip">
-        <div class="user-avatar" id="topbarAvatar">U</div>
-        <span class="user-name" id="topbarName"></span>
-      </div>
-      <button class="logout-btn" onclick="doLogout()" title="Logout">⏻</button>
-    </div>
+<!-- INSTRUCTIONS -->
+<div class="screen" id="s-inst">
+  <div class="back-bar"><button class="back-btn" onclick="showScreen('s-qtype')">&#8592;</button><span class="back-title">Instructions</span></div>
+  <div class="sp"></div>
+  <div class="card">
+    <div class="ctr mb2"><div style="font-size:48px;">&#128203;</div><div class="pg-title mt1" id="inst-ttl"></div><div class="pg-sub" id="inst-sub"></div></div>
+    <div id="inst-list"></div>
+    <div id="inst-warn" class="hidden mt1"></div>
+    <button class="btn btn-blue btn-full mt2" onclick="startQuiz()">Start Quiz</button>
+    <button class="btn btn-outline btn-full mt1" onclick="showScreen('s-qtype')">Back</button>
   </div>
-
-  <div class="layout-body">
-    <!-- Desktop Sidebar Nav -->
-    <nav class="desktop-nav" id="desktopNav">
-      <div class="desktop-nav-section">Main</div>
-      <button class="desktop-nav-item active" onclick="switchSection('dashboard',this)" data-sec="dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Dashboard
-      </button>
-      <button class="desktop-nav-item" onclick="switchSection('soh',this)" data-sec="soh">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-        Stock Lookup
-      </button>
-      <button class="desktop-nav-item" onclick="switchSection('pi',this)" data-sec="pi">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        Physical Inventory
-      </button>
-      <button class="desktop-nav-item" onclick="switchSection('history',this)" data-sec="history">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        PI History
-      </button>
-      <button class="desktop-nav-item" onclick="switchSection('barcode',this)" data-sec="barcode">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v3M7 5v3M13 5v3M17 5v3M21 5v3M3 16v3M7 16v3M13 16v3M17 16v3M21 16v3M3 9h4M17 9h4M3 12h18"/></svg>
-        Barcode Generator
-      </button>
-      <div class="desktop-nav-section admin-only" style="display:none">Admin</div>
-      <button class="desktop-nav-item admin-only" style="display:none" onclick="switchSection('admin',this)" data-sec="admin">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
-        User Management
-      </button>
-      <button class="desktop-nav-item admin-only" style="display:none" onclick="switchSection('upload',this)" data-sec="upload">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Data Upload
-      </button>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="main-wrap">
-      <div class="main-content">
-
-        <!-- ══ DASHBOARD ══ -->
-        <div id="sec-dashboard" class="section active">
-          <!-- Store Dashboard (default) -->
-          <div id="storeDash">
-            <div class="sec-header"><h2>Dashboard</h2><span id="storeWeekBadge" class="week-badge"></span></div>
-            <div class="stat-grid" id="storeDashCards">
-              <div class="stat-card accent"><div class="stat-val" id="sd_piAssigned">—</div><div class="stat-lbl">📌 PI Assigned</div></div>
-              <div class="stat-card success"><div class="stat-val" id="sd_counted">0</div><div class="stat-lbl">✅ Products Counted</div></div>
-              <div class="stat-card warning"><div class="stat-val" id="sd_pending">—</div><div class="stat-lbl">⏳ Pending</div></div>
-              <div class="stat-card danger"><div class="stat-val" id="sd_variance">0</div><div class="stat-lbl">⚠️ Variance Items</div></div>
-              <div class="stat-card purple"><div class="stat-val" id="sd_recount">0</div><div class="stat-lbl">🔄 Recount Pending</div></div>
-              <div class="stat-card"><div class="stat-val" id="sd_history">0</div><div class="stat-lbl">📁 Total History</div></div>
-            </div>
-            <div class="card" id="storePIStatus" style="display:none">
-              <div class="card-title">Current PI Assignment</div>
-              <div id="storePIStatusContent"></div>
-            </div>
-            <div class="card">
-              <div class="card-title">Quick Actions</div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <button class="btn btn-primary btn-sm" onclick="switchSection('pi',null)">📋 Open PI</button>
-                <button class="btn btn-secondary btn-sm" onclick="switchSection('soh',null)">🔍 Stock Lookup</button>
-                <button class="btn btn-secondary btn-sm" onclick="switchSection('history',null)">📁 View History</button>
-                <button class="btn btn-secondary btn-sm" onclick="switchSection('barcode',null)">🏷 Barcode Gen</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Admin Dashboard -->
-          <div id="adminDash" style="display:none">
-            <div class="sec-header"><h2>Admin Dashboard</h2><span id="adminWeekBadge" class="week-badge"></span></div>
-            <div class="stat-grid" id="adminDashCards">
-              <div class="stat-card accent"><div class="stat-val" id="ad_stores">5</div><div class="stat-lbl">🏪 Total Stores</div></div>
-              <div class="stat-card success"><div class="stat-val" id="ad_activePIs">0</div><div class="stat-lbl">✅ Active PIs</div></div>
-              <div class="stat-card warning"><div class="stat-val" id="ad_weekVar">—</div><div class="stat-lbl">📊 Week Variance%</div></div>
-              <div class="stat-card danger"><div class="stat-val" id="ad_monthVar">—</div><div class="stat-lbl">📈 Month Variance%</div></div>
-              <div class="stat-card purple"><div class="stat-val" id="ad_recountReq">0</div><div class="stat-lbl">🔄 Recount Requests</div></div>
-              <div class="stat-card"><div class="stat-val" id="ad_approvalPending">0</div><div class="stat-lbl">⏳ Approvals Pending</div></div>
-            </div>
-            <div class="card">
-              <div class="card-title-row"><span class="card-title" style="margin:0">⚠️ Top Variance Stores — This Week</span></div>
-              <div id="adminTopVariance"><div style="color:var(--text2);font-size:12px;">No data for this week</div></div>
-            </div>
-            <div class="card">
-              <div class="card-title">📊 Variance Trend (Last 4 Weeks)</div>
-              <div id="adminVarianceTrend" style="font-size:12px;color:var(--text2);">No trend data yet</div>
-            </div>
-            <div class="card">
-              <div class="card-title">Quick Actions</div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <button class="btn btn-primary btn-sm" onclick="switchSection('admin',null)">👥 Manage Users</button>
-                <button class="btn btn-secondary btn-sm" onclick="switchSection('upload',null)">⬆ Upload Data</button>
-                <button class="btn btn-secondary btn-sm" onclick="switchSection('history',null)">📁 All History</button>
-                <button class="btn btn-secondary btn-sm" onclick="openAssignPIModal()">📌 Assign PI</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ STOCK LOOKUP ══ -->
-        <div id="sec-soh" class="section">
-          <div class="sec-header">
-            <h2>📋 Stock Lookup</h2>
-            <div class="sec-header-actions">
-              <button class="btn btn-sm btn-ghost" onclick="openCameraForLookup()">📷 Scan</button>
-            </div>
-          </div>
-          <div class="search-bar">
-            <div class="search-input-wrap">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input class="search-input" id="sohSearch" placeholder="Search code, brand, class, department..." oninput="renderSOH()">
-            </div>
-            <button class="btn btn-sm btn-secondary" onclick="renderSOH()">Search</button>
-          </div>
-          <div class="filter-chips" id="sohStoreFilter"></div>
-          <div id="sohContent">
-            <div class="empty"><div class="empty-icon">📋</div><h3>No Data Loaded</h3><p>Admin needs to upload the SOH CSV file</p></div>
-          </div>
-          <div id="sohPageInfo" style="font-size:11px;color:var(--text2);text-align:right;margin-top:6px;"></div>
-        </div>
-
-        <!-- ══ PHYSICAL INVENTORY ══ -->
-        <div id="sec-pi" class="section">
-          <div class="sec-header">
-            <h2>🔍 Physical Inventory</h2>
-            <span id="piWeekBadge" class="week-badge">Week —</span>
-          </div>
-
-          <!-- PI Status Banner -->
-          <div id="piStatusBanner" style="display:none"></div>
-
-          <!-- No PI assigned -->
-          <div id="piNotAssigned" style="display:none">
-            <div class="empty"><div class="empty-icon">📌</div><h3>No PI Assigned</h3><p>Admin has not assigned a Physical Inventory for this week yet.</p></div>
-          </div>
-
-          <!-- PI Active -->
-          <div id="piActive">
-            <!-- Scan Card -->
-            <div class="card">
-              <div class="card-title-row">
-                <span class="card-title" style="margin:0">Scan / Enter Product</span>
-                <button class="btn btn-sm btn-ghost" onclick="openCameraForPI()">📷 Camera Scan</button>
-              </div>
-              <div class="scan-box" id="piScanBox">
-                <div class="scan-box-icon">📱</div>
-                <p>Scan barcode with camera or type product code below</p>
-                <input class="scan-input" id="piBarcode" type="text" placeholder="PRODUCT CODE"
-                  autocomplete="off" inputmode="numeric" spellcheck="false"
-                  oninput="piCodeInput()" onkeydown="if(event.key==='Enter')lookupPI()">
-              </div>
-              <!-- Product Info Preview -->
-              <div id="piProductInfo" style="display:none">
-                <div style="background:var(--accent-light);border:1px solid rgba(37,99,235,.2);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
-                    <div><span style="color:var(--text2)">Code:</span> <b id="pi_code">—</b></div>
-                    <div><span style="color:var(--text2)">Dept:</span> <b id="pi_dept">—</b></div>
-                    <div><span style="color:var(--text2)">Class:</span> <b id="pi_class">—</b></div>
-                    <div><span style="color:var(--text2)">Brand:</span> <b id="pi_brand">—</b></div>
-                    <div><span style="color:var(--text2)">MRP:</span> <b id="pi_mrp">—</b></div>
-                    <div><span style="color:var(--text2)">Sys Stock:</span> <b id="pi_soh">—</b></div>
-                  </div>
-                </div>
-              </div>
-              <div class="input-row">
-                <div class="field" style="flex:1">
-                  <label>Physical Quantity</label>
-                  <input type="number" id="piQty" placeholder="Enter qty" min="0"
-                    style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:16px;font-weight:700;outline:none;color:var(--text);"
-                    onkeydown="if(event.key==='Enter')addPIItem()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                </div>
-                <button class="btn btn-primary" style="margin-bottom:0;height:44px;" onclick="addPIItem()">+ Add</button>
-              </div>
-            </div>
-
-            <!-- Progress + Items -->
-            <div class="card">
-              <div class="card-title-row">
-                <span class="card-title" style="margin:0">Counted Items (<span id="piCount">0</span>)</span>
-                <div style="display:flex;gap:6px;">
-                  <button class="btn btn-xs btn-secondary" onclick="searchPIItems()">🔍</button>
-                  <button class="btn btn-xs btn-secondary" onclick="clearPIList()">Clear</button>
-                </div>
-              </div>
-              <div id="piSearchBar" style="display:none;margin-bottom:10px;">
-                <input type="text" id="piSearchInput" placeholder="Search counted items..." class="search-input" style="padding:8px 12px;">
-              </div>
-              <div id="piItemList"><div class="empty" style="padding:20px"><p>No items counted yet</p></div></div>
-              <hr class="divider">
-              <button class="btn btn-success btn-full" onclick="submitPI()" id="submitPIBtn" disabled
-                style="margin-top:4px;">✅ Submit Physical Inventory</button>
-            </div>
-          </div>
-
-          <!-- Recount Section (appears after PI submission) -->
-          <div id="recountSection" style="display:none">
-            <div class="card">
-              <div class="card-title">🔄 Recount Options</div>
-              <div id="recountContent"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ PI HISTORY ══ -->
-        <div id="sec-history" class="section">
-          <div class="sec-header">
-            <h2>📁 PI History</h2>
-            <div class="sec-header-actions">
-              <button class="btn btn-sm btn-secondary" onclick="exportHistoryExcel()">⬇ Excel</button>
-              <button class="btn btn-sm btn-secondary" onclick="exportHistoryPDF()">⬇ PDF</button>
-            </div>
-          </div>
-          <!-- Filter Row -->
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
-            <select id="histFilterStore" class="select-input" style="flex:1;min-width:100px;padding:8px 10px;" onchange="renderHistory()">
-              <option value="ALL">All Stores</option>
-            </select>
-            <select id="histFilterPeriod" class="select-input" style="flex:1;min-width:100px;padding:8px 10px;" onchange="renderHistory()">
-              <option value="all">All Time</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="custom">Custom Range</option>
-            </select>
-          </div>
-          <div id="histCustomRange" style="display:none;margin-bottom:12px;grid-template-columns:1fr 1fr;gap:8px;">
-            <input type="date" id="histDateFrom" class="select-input" onchange="renderHistory()">
-            <input type="date" id="histDateTo" class="select-input" onchange="renderHistory()">
-          </div>
-          <div class="filter-chips" id="historyStoreChips"></div>
-          <div id="historyList"><div class="empty"><div class="empty-icon">📂</div><h3>No History</h3><p>Submitted PI records will appear here</p></div></div>
-        </div>
-
-        <!-- ══ BARCODE GENERATOR ══ -->
-        <div id="sec-barcode" class="section">
-          <div class="sec-header"><h2>🏷 Barcode Generator</h2></div>
-          <div class="card">
-            <div class="card-title">Generate Label Sheet</div>
-            <div class="field">
-              <label>Product Codes (one per line)</label>
-              <textarea id="bcCodes" rows="5" placeholder="Enter 4-digit product codes, one per line&#10;Example:&#10;1234&#10;5678&#10;9012&#10;3456"></textarea>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary" style="flex:1" onclick="generateBarcodes()">🔧 Generate Labels</button>
-              <button class="btn btn-secondary" onclick="printBarcodes()">🖨 Print A4</button>
-              <button class="btn btn-secondary" onclick="exportBarcodePDF()">⬇ PDF</button>
-            </div>
-            <p style="font-size:11px;color:var(--text2);margin-top:8px;">Label size: 3.5 × 2.0 cm · CODE128 format · KIDZA brand · Class & MRP auto-filled from SOH</p>
-          </div>
-          <div id="barcodePreviewWrap" style="display:none">
-            <div class="card">
-              <div class="card-title-row">
-                <span class="card-title" style="margin:0">Preview — <span id="bcCount">0</span> labels</span>
-                <button class="btn btn-xs btn-secondary" onclick="clearBarcodes()">Clear</button>
-              </div>
-              <div id="barcodePreview" class="bc-grid"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ ADMIN: USER MANAGEMENT ══ -->
-        <div id="sec-admin" class="section">
-          <div class="sec-header">
-            <h2>👥 User Management</h2>
-            <button class="btn btn-sm btn-primary" onclick="openModal('createUserModal')">+ New User</button>
-          </div>
-
-          <!-- Assign PI Card (also here) -->
-          <div class="card">
-            <div class="card-title-row">
-              <span class="card-title" style="margin:0">📌 Assign Weekly Physical Inventory</span>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;">
-              <div class="field" style="margin:0">
-                <label>Week</label>
-                <input type="week" id="adminPIWeek" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;outline:none;">
-              </div>
-              <button class="btn btn-primary" onclick="openAssignPIModal()" style="height:42px;">📌 Assign PI</button>
-            </div>
-          </div>
-
-          <!-- Users List -->
-          <div class="card">
-            <div class="card-title">All Users</div>
-            <div id="usersList"><div class="empty" style="padding:20px"><p>Loading users...</p></div></div>
-          </div>
-        </div>
-
-        <!-- ══ ADMIN: DATA UPLOAD ══ -->
-        <div id="sec-upload" class="section">
-          <div class="sec-header"><h2>⬆ Data Upload</h2></div>
-
-          <!-- SOH Upload -->
-          <div class="card">
-            <div class="card-title">📋 Stock on Hand (SOH) Data</div>
-            <div class="info-box blue" style="margin-bottom:12px;">
-              Required CSV columns: <code>StoreName</code> <code>Concatinate</code> <code>Department</code> <code>Class</code> <code>Brand</code> <code>MRP</code> <code>SOH</code> <code>ProductCode</code>
-              <br><br>Concatenate = StoreName + ProductCode (e.g. <code>Kattur1234</code>)
-            </div>
-            <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:28px;text-align:center;margin-bottom:12px;cursor:pointer;transition:border-color .2s;" id="sohDropZone" onclick="document.getElementById('sohFileInput').click()">
-              <div style="font-size:32px;margin-bottom:8px;">📁</div>
-              <div style="font-weight:600;margin-bottom:4px;">Click to upload CSV</div>
-              <div style="font-size:12px;color:var(--text2);">or drag and drop here</div>
-            </div>
-            <input type="file" id="sohFileInput" accept=".csv" style="display:none" onchange="handleSOHUpload(event)">
-            <div id="sohUploadStatus"></div>
-            <hr class="divider">
-            <div class="card-title">Uploaded Files</div>
-            <div id="sohFilesList"><div style="color:var(--text2);font-size:13px;">No files uploaded yet</div></div>
-            <hr class="divider" style="margin-top:6px;">
-            <button class="btn btn-danger btn-sm" onclick="deleteAllSOH()">🗑 Delete All SOH Data</button>
-          </div>
-
-          <!-- Google Sheet Sync -->
-          <div class="card">
-            <div class="card-title">🔗 Google Sheet Sync</div>
-            <div class="info-box yellow">Publish your Google Sheet as CSV (File → Share → Publish to web → CSV), then paste the URL below.</div>
-            <div class="field" style="margin-top:10px;">
-              <label>Published Google Sheet CSV URL</label>
-              <input type="url" id="gsheetURL" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv"
-                style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;width:100%;outline:none;font-size:13px;color:var(--text);">
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary btn-sm" onclick="syncGSheet()">🔄 Sync Now</button>
-              <button class="btn btn-secondary btn-sm" onclick="saveGSheetURL()">💾 Save URL</button>
-            </div>
-            <div id="gsheetStatus" style="margin-top:8px;font-size:12px;color:var(--text2);"></div>
-          </div>
-        </div>
-
-      </div><!-- /main-content -->
-    </div>
-  </div><!-- /layout-body -->
-
-  <!-- Bottom Nav (mobile) -->
-  <nav class="bottom-nav" id="bottomNav">
-    <button class="nav-btn active" onclick="switchSection('dashboard',this)" data-sec="dashboard">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Home
-    </button>
-    <button class="nav-btn" onclick="switchSection('soh',this)" data-sec="soh">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
-      Stock
-    </button>
-    <button class="nav-btn" onclick="switchSection('pi',this)" data-sec="pi">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      PI
-    </button>
-    <button class="nav-btn" onclick="switchSection('history',this)" data-sec="history">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      History
-    </button>
-    <button class="nav-btn" onclick="switchSection('barcode',this)" data-sec="barcode">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v3M7 5v3M13 5v3M17 5v3M21 5v3M3 16v3M7 16v3M13 16v3M17 16v3M21 16v3M3 9h4M17 9h4M3 12h18"/></svg>
-      Labels
-    </button>
-  </nav>
+  <div class="sp"></div>
 </div>
 
-<!-- ══════════════════════════════════════
-     ALL MODALS
-══════════════════════════════════════ -->
-
-<!-- Camera / Barcode Scanner Modal -->
-<div class="modal-overlay" id="cameraModal">
-  <div class="modal" style="max-width:420px;">
-    <h3>📷 Barcode Scanner</h3>
-    <div id="qr-reader"></div>
-    <div class="scanner-controls">
-      <button class="btn btn-secondary btn-sm" onclick="toggleFlashlight()" id="flashBtn">🔦 Flash</button>
-      <button class="btn btn-secondary btn-sm" onclick="switchCamera()">🔄 Switch Camera</button>
-      <button class="btn btn-danger btn-sm" onclick="stopScanner()" style="margin-left:auto">✕ Close</button>
+<!-- QUIZ -->
+<div class="screen" id="s-quiz">
+  <div class="app-header" style="padding:44px 20px 20px;">
+    <div class="hd-row">
+      <div><div style="font-size:12px;color:rgba(255,255,255,.65);">Staff</div><div style="font-family:var(--display);font-weight:700;color:#fff;font-size:16px;" id="qz-name"></div></div>
+      <div class="timer-pill" id="qz-timer">&#9201; <span id="qz-tsec">30</span>s</div>
     </div>
+  </div>
+  <div class="card" style="margin-top:-14px;position:relative;z-index:2;">
+    <div class="prog-bar"><div class="prog-fill" id="qz-prog"></div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <b id="qz-cnt" style="font-size:13px;color:var(--mid);"></b>
+      <div class="pip-row" id="qz-pips"></div>
+    </div>
+    <div style="font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:18px;line-height:1.5;" id="qz-q"></div>
+    <div id="qz-opts"></div>
+    <button class="btn btn-blue btn-full mt2 hidden" id="qz-next" onclick="nextQ()">Next</button>
   </div>
 </div>
 
-<!-- PI Result / Variance Report Modal -->
-<div class="modal-overlay" id="piResultModal">
-  <div class="modal">
-    <h3>📊 Variance Report</h3>
-    <div id="piResultContent"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('piResultModal')">Close</button>
-      <button class="btn btn-secondary" onclick="exportVarianceExcel()">⬇ Excel</button>
-      <button class="btn btn-primary" onclick="exportVariancePDF()">⬇ PDF</button>
-    </div>
+<!-- RESULT -->
+<div class="screen" id="s-result">
+  <div class="back-bar"><button class="back-btn" onclick="goHomeFromResult()">&#8592;</button><span class="back-title">Results</span></div>
+  <div class="sp"></div>
+  <div class="card ctr">
+    <div class="pg-title mb1" id="res-hd">Quiz Complete</div>
+    <div class="score-ring"><h1 id="res-sc">0</h1><small id="res-tot">/ 0</small></div>
+    <div class="mb1">Percentage: <b style="color:var(--blue);" id="res-pct"></b></div>
+    <div class="mb1" id="res-status"></div>
+    <div style="font-size:12px;color:var(--muted);" id="res-rem"></div>
   </div>
+  <div class="card">
+    <div class="pg-title mb2" style="font-size:16px;">Answer Review</div>
+    <div id="res-review"></div>
+  </div>
+  <div class="card"><button class="btn btn-blue btn-full" onclick="goHomeFromResult()">Back to Home</button></div>
+  <div class="sp"></div>
 </div>
 
-<!-- History Detail Modal -->
-<div class="modal-overlay" id="historyModal">
-  <div class="modal">
-    <h3 id="historyModalTitle">PI Details</h3>
-    <div id="historyModalContent"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('historyModal')">Close</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportHistoryItemExcel()">⬇ Excel</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportHistoryItemPDF()">⬇ PDF</button>
+<!-- LEADERBOARD -->
+<div class="screen" id="s-lb">
+  <div class="back-bar"><button class="back-btn" onclick="navBack()">&#8592;</button><span class="back-title">Leaderboard</span></div>
+  <div class="sp"></div>
+  <div class="card">
+    <div class="tabs" id="lb-tabs">
+      <button class="tab-btn active" onclick="switchLbTab('all')">All Staff</button>
+      <button class="tab-btn" onclick="switchLbTab('course')">By Course</button>
     </div>
+    <div id="lb-cfilter" class="hidden mb2">
+      <select id="lb-csel" onchange="renderLb()"><option value="">All Courses</option></select>
+    </div>
+    <div id="lb-list"></div>
   </div>
+  <div class="sp"></div>
 </div>
 
-<!-- Assign PI Modal -->
-<div class="modal-overlay" id="assignPIModal">
-  <div class="modal" style="max-width:420px;">
-    <h3>📌 Assign Physical Inventory</h3>
-    <div class="field">
-      <label>Week</label>
-      <input type="week" id="assignPIWeek" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none;">
-    </div>
-    <div class="field">
-      <label>Select Stores</label>
-      <div id="assignStoreList" style="display:flex;flex-direction:column;gap:6px;"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('assignPIModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="doAssignPI()">📌 Assign</button>
-    </div>
+<!-- MATERIAL VIEWER -->
+<div class="screen" id="s-mat">
+  <div class="back-bar"><button class="back-btn" onclick="backFromMat()">&#8592;</button><span class="back-title" id="mat-bar">Material</span></div>
+  <div class="sp"></div>
+  <div class="card">
+    <div id="mat-content"></div>
+    <div class="mt2" id="mat-done-area"></div>
   </div>
+  <div class="sp"></div>
 </div>
 
-<!-- Create User Modal -->
-<div class="modal-overlay" id="createUserModal">
-  <div class="modal" style="max-width:420px;">
-    <h3 id="userModalTitle">➕ Create User</h3>
-    <div class="field">
-      <label>Display Name</label>
-      <input type="text" id="newUserName" placeholder="e.g. Kattur Store">
-    </div>
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="newUserEmail" placeholder="store@example.com">
-    </div>
-    <div class="field">
-      <label>Password</label>
-      <div class="input-icon-wrap">
-        <input type="password" id="newUserPassword" placeholder="Min 6 characters">
-        <button class="eye-btn" onclick="togglePasswordVisibility('newUserPassword',this)" type="button">👁</button>
+<!-- ══ ADMIN ══ -->
+<div class="screen" id="s-admin">
+  <div class="app-header">
+    <div class="hd-row">
+      <div><div class="hd-brand">KIDZA Admin</div><div class="hd-sub" id="adm-sub">Management</div></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" id="sync-btn" onclick="syncNow()">↻ Sync</button>
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
       </div>
     </div>
-    <div class="field">
-      <label>Role</label>
-      <select id="newUserRole" class="select-input">
-        <option value="store">Store User</option>
-        <option value="admin">Admin</option>
-      </select>
+  </div>
+  <div class="card" style="margin-top:-14px;position:relative;z-index:2;">
+    <div class="tabs" id="adm-tabs">
+      <button class="tab-btn active" onclick="admTab('ov')">Overview</button>
+      <button class="tab-btn" onclick="admTab('co')">Courses</button>
+      <button class="tab-btn" onclick="admTab('us')">Users</button>
+      <button class="tab-btn" onclick="admTab('re')">Results</button>
     </div>
-    <div class="field">
-      <label>Store</label>
-      <select id="newUserStore" class="select-input">
-        <option value="">— Select Store —</option>
-        <option value="Kattur">Kattur</option>
-        <option value="Cumbum">Cumbum</option>
-        <option value="MGT">MGT</option>
-        <option value="Theni">Theni</option>
-        <option value="Dindigul">Dindigul</option>
-      </select>
+    <!-- OVERVIEW -->
+    <div id="adm-ov">
+      <div class="stat-grid mb2" id="adm-stats"></div>
+      <div class="mb2"><div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">SCORE DISTRIBUTION</div><div class="chart-wrap"><canvas id="ch-sc"></canvas></div></div>
+      <div class="mb2"><div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">PASS / FAIL</div><div class="chart-wrap" style="height:170px;"><canvas id="ch-pf"></canvas></div></div>
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">COMPLETION %</div><div class="chart-wrap"><canvas id="ch-cp"></canvas></div></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('createUserModal')">Cancel</button>
-      <button class="btn btn-primary" id="saveUserBtn" onclick="saveUser()">Create User</button>
+    <!-- COURSES -->
+    <div id="adm-co" class="hidden">
+      <button class="btn btn-blue btn-full mb2" onclick="openCModal(null)">+ New Course</button>
+      <div id="adm-co-list"></div>
+    </div>
+    <!-- USERS -->
+    <div id="adm-us" class="hidden">
+      <button class="btn btn-blue btn-full mb2" onclick="openUModal(null)">+ New User</button>
+      <div id="adm-us-list"></div>
+    </div>
+    <!-- RESULTS -->
+    <div id="adm-re" class="hidden">
+      <div class="row mb2">
+        <button class="btn btn-success btn-sm" onclick="exportCSV()">Export CSV</button>
+        <select id="adm-fc" onchange="renderAdmRe()" style="flex:1;font-size:13px;padding:9px 10px;"></select>
+      </div>
+      <div class="tbl-wrap mb2">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Course</th><th>Score</th><th>Mode</th><th>Status</th><th>Act</th></tr></thead>
+          <tbody id="adm-re-body"></tbody>
+        </table>
+      </div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--mid);">LEADERBOARD</div>
+      <div id="adm-lb"></div>
+    </div>
+  </div>
+  <div class="sp"></div>
+</div>
+
+<!-- COURSE MODAL -->
+<div class="modal-ov hidden" id="m-co">
+  <div class="modal-box">
+    <div class="modal-hnd"></div>
+    <div class="modal-ttl" id="m-co-ttl">New Course</div>
+    <div class="iw"><span class="lbl">Course Name</span><input id="mc-n" placeholder="Course name"></div>
+    <div class="iw"><span class="lbl">Description</span><textarea id="mc-d" placeholder="Brief description..."></textarea></div>
+    <div class="row mb2" style="flex-wrap:wrap;gap:10px;">
+      <div style="flex:1;min-width:80px;"><span class="lbl">Pass %</span><input type="number" id="mc-p" value="60" min="1" max="100"></div>
+      <div style="flex:1;min-width:80px;"><span class="lbl">Timer K (s)</span><input type="number" id="mc-tk" value="30" min="5"></div>
+      <div style="flex:1;min-width:80px;"><span class="lbl">Timer S (s)</span><input type="number" id="mc-ts" value="10" min="3"></div>
+    </div>
+    <div class="sep"></div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Materials</div>
+    <div id="mc-mats"></div>
+    <button class="btn btn-outline btn-full btn-sm mb2" onclick="addMat()">+ Add Material</button>
+    <div class="sep"></div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Questions</div>
+    <div id="mc-qs"></div>
+    <button class="btn btn-outline btn-full btn-sm mb2" onclick="addQ()">+ Add Question</button>
+    <div class="sep"></div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Assign to Users</div>
+    <div id="mc-asgn"></div>
+    <div class="row mt2">
+      <button class="btn btn-blue btn-full" onclick="saveCourse()">Save Course</button>
+      <button class="btn btn-outline btn-full" onclick="closeM('m-co')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- Recount Photos Modal -->
-<div class="modal-overlay" id="recountPhotosModal">
-  <div class="modal">
-    <h3>📷 Recount Photos</h3>
-    <div id="recountPhotosContent"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('recountPhotosModal')">Close</button>
+<!-- USER MODAL -->
+<div class="modal-ov hidden" id="m-us">
+  <div class="modal-box">
+    <div class="modal-hnd"></div>
+    <div class="modal-ttl" id="m-us-ttl">New User</div>
+    <div class="iw"><span class="lbl">Full Name</span><input id="mu-n" placeholder="Full name"></div>
+    <div class="iw"><span class="lbl">Username</span><input id="mu-u" placeholder="login username (no spaces)"></div>
+    <div class="iw"><span class="lbl">Password</span><input type="password" id="mu-p" placeholder="password"></div>
+    <div class="iw"><span class="lbl">Role</span><select id="mu-r"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
+    <div id="mu-err" class="alert al-err hidden"></div>
+    <div class="row mt2">
+      <button class="btn btn-blue btn-full" onclick="saveUser()">Save User</button>
+      <button class="btn btn-outline btn-full" onclick="closeM('m-us')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast"></div>
+<!-- CONGRATS -->
+<div id="cg-ov" class="hidden">
+  <div class="cg-ov">
+    <div class="cg-box" id="cg-box">
+      <span class="cg-emoji" id="cg-em">&#127881;</span>
+      <div style="font-family:var(--display);font-size:22px;font-weight:800;margin:12px 0 6px;" id="cg-ttl">Congratulations!</div>
+      <div style="color:var(--muted);font-size:14px;margin-bottom:16px;" id="cg-msg"></div>
+      <div class="score-ring" style="width:110px;height:110px;border-width:4px;margin:0 auto 16px;">
+        <h1 style="font-size:36px;" id="cg-sc">0</h1><small id="cg-tot">/ 0</small>
+      </div>
+      <button class="btn btn-blue btn-full" onclick="closeCg()">View Details</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  INVENTORY MANAGEMENT SYSTEM — JavaScript
-//  Firebase Auth + Realtime DB + Storage
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════
+// DB + SESSION  (Firebase Realtime Database — syncs across all devices)
+// ═══════════════════════
 
-// ── Firebase Config (pre-filled from your project) ──
-const FB_CONFIG = {
-  apiKey: "AIzaSyBQJXTeqPCGejm5KysDj4ez4AIoJpz8t8A",
-  authDomain: "ims---app.firebaseapp.com",
-  databaseURL: "https://ims---app-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ims---app",
-  storageBucket: "ims---app.firebasestorage.app",
-  messagingSenderId: "489115122180",
-  appId: "1:489115122180:web:e1a7b9fde812e4bc90d351"
+// ┌─────────────────────────────────────────────────────────────────┐
+// │  FIREBASE CONFIG — paste your own project config here          │
+// │  Get it from: Firebase Console → Project Settings → Your Apps  │
+// └─────────────────────────────────────────────────────────────────┘
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDPWiErsiy2-ZBThzfb8CQqVCaa3Bm4L5E",
+  authDomain: "kidza-quiz.firebaseapp.com",
+  databaseURL: "https://kidza-quiz-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kidza-quiz",
+  storageBucket: "kidza-quiz.firebasestorage.app",
+  messagingSenderId: "1005530966135",
+  appId: "1:1005530966135:web:5479ee774ac8ed59957e72"
 };
 
-// ── Firebase Init ──
-if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
-const auth = firebase.auth();
-const db   = firebase.database();
-const stor = firebase.storage();
+// Detect placeholder config — real keys start with "AIzaSy" and are 39 chars; fake ones aren't
+const FIREBASE_CONFIGURED = (
+  typeof FIREBASE_CONFIG.apiKey === 'string' &&
+  FIREBASE_CONFIG.apiKey.length >= 35 &&
+  FIREBASE_CONFIG.apiKey !== 'AIzaSyAbc123xyz' &&
+  !FIREBASE_CONFIG.messagingSenderId.startsWith('987654321')
+);
 
-// ── Offline Cache ──
-const CACHE = {
-  get: k => { try { return JSON.parse(localStorage.getItem('ims_'+k)); } catch(e){ return null; }},
-  set: (k,v) => { try { localStorage.setItem('ims_'+k, JSON.stringify(v)); } catch(e){} },
-  del: k => localStorage.removeItem('ims_'+k)
+let fbDB = null;  // Firebase database reference
+const SK = 'kidza_sess';
+const LOCAL_KEY = 'kidza_v7';
+
+const DB_DEFAULT = {
+  users:[
+    {id:'u0',name:'Admin',username:'admin',password:'kidza2024',role:'admin'},
+    {id:'u1',name:'TEST',username:'test',password:'1234',role:'staff'},
+    {id:'u2',name:'Rajagopal',username:'9629816727',password:'1234',role:'staff'},
+    {id:'u3',name:'Rajadurai',username:'9751088431',password:'1234',role:'staff'},
+    {id:'u1',name:'Tamilarsan',username:'8838405191',password:'1234',role:'staff'},
+    {id:'u1',name:'Manjula',username:'8012185613',password:'1234',role:'staff'},
+    {id:'u1',name:'Prasanth',username:'8838820294',password:'1234',role:'staff'},
+    {id:'u1',name:'Prabha',username:'8508463900',password:'1234',role:'staff'},
+    {id:'u1',name:'Surya',username:'8098493506',password:'1234',role:'staff'},
+    {id:'u1',name:'Swathi',username:'9789405578',password:'1234',role:'staff'},
+    {id:'u1',name:'Yuvarajan',username:'9787686585',password:'1234',role:'staff'},
+    {id:'u1',name:'Saranya',username:'7868061065',password:'1234',role:'staff'},
+    {id:'u1',name:'Veera',username:'9345486979',password:'1234',role:'staff'},
+    {id:'u1',name:'Philip Arun',username:'8072019655',password:'1234',role:'staff'},
+    {id:'u1',name:'Dhanajeyan',username:'8220268887',password:'1234',role:'staff'},
+    {id:'u1',name:'Kavya',username:'7418714690',password:'1234',role:'staff'},
+    {id:'u1',name:'Malathi',username:'9025431213',password:'1234',role:'staff'},
+    {id:'u1',name:'Narmatha',username:'9597166849',password:'1234',role:'staff'},
+    {id:'u1',name:'Priyadharsini',username:'8667540181',password:'1234',role:'staff'},
+    {id:'u1',name:'Tharik',username:'9025937706',password:'1234',role:'staff'},
+    {id:'u1',name:'Nila',username:'8825710851',password:'1234',role:'staff'}
+  ],
+  courses:[{
+    id:'c1',name:'Product Knowledge',desc:'Learn about Kidza products, categories and certifications.',
+    passPercent:60,timerK:30,timerS:10,assignedUsers:['u1','u2'],
+    materials:[{id:'m1',type:'video',title:'Product Overview',url:''},{id:'m2',type:'pdf',title:'Product Catalogue',url:''}],
+    questions:[
+      {id:'q1',question:'What is the Kidza return policy?',options:['7 Days','14 Days','30 Days','No Return'],answer:2},
+      {id:'q2',question:'Which certification is required for baby products?',options:['ISO','ISI','BIS','FDA'],answer:2},
+      {id:'q3',question:'Which age group uses newborn diapers?',options:['0-3 Months','1-2 Years','3-5 Years','5+ Years'],answer:0}
+    ]
+  }],
+  results:[],matProg:{},attempts:{}
 };
 
-// ── App State ──
-let APP = {
-  user: null,       // Firebase user
-  profile: null,    // { name, role, store, email, disabled }
-  sohData: [],
-  sohMap: {},
-  piItems: [],
-  piWeek: '',
-  piAssignment: null,
-  currentPIResult: null,
-  activeSohStore: 'ALL',
-  sohPage: 0,
-  SOH_PAGE_SIZE: 100,
-  scanCallback: null,    // which flow triggered camera
-  html5QrCode: null,
-  histItem: null,
-};
+let DB = JSON.parse(JSON.stringify(DB_DEFAULT));
 
-const STORES = ['Kattur','Cumbum','MGT','Theni','Dindigul'];
-
-// ═══════════════════════════════════════════════════════════════
-//  UTILS
-// ═══════════════════════════════════════════════════════════════
-function showLoading(msg='Loading...') {
-  document.getElementById('loadingText').textContent = msg;
-  document.getElementById('loadingOverlay').classList.remove('hidden');
-}
-function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
-
-function showToast(msg, type='', dur=2800) {
-  const wrap = document.getElementById('toast');
-  const div = document.createElement('div');
-  div.className = `toast-msg ${type}`;
-  div.textContent = msg;
-  wrap.appendChild(div);
-  setTimeout(() => div.remove(), dur);
+// ── Initialise Firebase (only if configured) ──
+function initFirebase(){
+  if(!FIREBASE_CONFIGURED) return false;
+  if(typeof firebase === 'undefined'){
+    console.warn('Firebase SDK not loaded — running in offline mode.');
+    return false;
+  }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    fbDB = firebase.database();
+    return true;
+  }catch(e){ console.warn('Firebase init failed:',e); return false; }
 }
 
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function togglePasswordVisibility(inputId, btn) {
-  const inp = document.getElementById(inputId);
-  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
-  else { inp.type = 'password'; btn.textContent = '👁'; }
+// ═══════════════════════
+// SYNC MANAGER (added) — realtime cross-device sync + status badge
+// ═══════════════════════
+function setSyncStatus(state,text){
+  const el=$('sync-status'); if(!el) return;
+  el.className=state; el.classList.remove('hidden');
+  const lbl=$('sync-status-text'); if(lbl) lbl.textContent=text||({online:'Online',offline:'Offline',syncing:'Syncing…'}[state]||state);
 }
-
-function getWeekString(date = new Date()) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2,'0')}`;
+let _fbListenerAttached=false;
+// Real-time listener — automatically refreshes UI when data changes on another device
+function listenForChanges(){
+  if(!fbDB||_fbListenerAttached) return;
+  _fbListenerAttached=true;
+  fbDB.ref('kidza/db').on('value', snap=>{
+    if(!snap.exists()) return;
+    const d=snap.val();
+    DB=Object.assign({users:[],courses:[],results:[],matProg:{},attempts:{}},d);
+    try{localStorage.setItem(LOCAL_KEY,JSON.stringify(DB));}catch(e){}
+    setSyncStatus('online','Online');
+    refreshCurrentScreen();
+    sendToMIT('SYNC_SUCCESS'); // MIT App Inventor bridge event
+  }, err=>{console.warn('Firebase listener error:',err);setSyncStatus('offline','Offline');sendToMIT('SYNC_FAILED');});
 }
-
-function getMonthString(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
-}
-
-function fmtDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-
-function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ═══════════════════════════════════════════════════════════════
-//  ONLINE / OFFLINE
-// ═══════════════════════════════════════════════════════════════
-window.addEventListener('online', () => {
-  document.getElementById('offlineBanner').style.display = 'none';
-  syncOfflineQueue();
-});
-window.addEventListener('offline', () => {
-  document.getElementById('offlineBanner').style.display = 'block';
-});
-
-let offlineQueue = CACHE.get('offlineQueue') || [];
-function queueOffline(path, data) {
-  offlineQueue.push({ path, data, ts: Date.now() });
-  CACHE.set('offlineQueue', offlineQueue);
-}
-function syncOfflineQueue() {
-  if (!offlineQueue.length) return;
-  offlineQueue.forEach(item => db.ref(item.path).set(item.data).catch(()=>{}));
-  offlineQueue = [];
-  CACHE.set('offlineQueue', []);
-  showToast('☁️ Offline data synced', 'success');
-}
-
-function fbSet(path, data) {
-  if (navigator.onLine) {
-    return db.ref(path).set(data);
-  } else {
-    queueOffline(path, data);
-    return Promise.resolve();
+// Re-render the currently visible screen so realtime updates appear instantly
+function refreshCurrentScreen(){
+  const active=document.querySelector('.screen.active');
+  if(!active||!CUR.user) return;
+  switch(active.id){
+    case 's-home': goHome(); break;
+    case 's-admin': renderAdmin(); break;
+    case 's-lb': renderLb(); break;
+    case 's-course': if(CID) openCourse(CID); break;
   }
 }
-function fbUpdate(path, data) {
-  if (navigator.onLine) {
-    return db.ref(path).update(data);
-  } else {
-    queueOffline(path+'/_update', data);
-    return Promise.resolve();
+// Connect / reconnect helpers
+function connectFirebase(){ return initFirebase(); }
+function reconnectFirebase(){
+  if(connectFirebase()){ listenForChanges(); setSyncStatus('syncing','Syncing…'); lDB().then(()=>{setSyncStatus('online','Online');refreshCurrentScreen();}); }
+}
+window.addEventListener('online',()=>{setSyncStatus('syncing','Syncing…');reconnectFirebase();});
+window.addEventListener('offline',()=>{setSyncStatus('offline','Offline');});
+
+// ── Save DB to Firebase + localStorage fallback ──
+let _saveTimer = null;
+function sDB(){
+  // Always write localStorage immediately as fallback
+  try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(DB)); }catch(e){}
+  // Debounce Firebase write by 400ms
+  if(fbDB){
+    setSyncStatus('syncing','Syncing…');
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(()=>{
+      fbDB.ref('kidza/db').set(JSON.parse(JSON.stringify(DB)))
+        .then(()=>setSyncStatus('online','Online'))
+        .catch(e=>{console.warn('Firebase write error:',e);setSyncStatus('offline','Offline');});
+    }, 400);
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  FIREBASE AUTH
-// ═══════════════════════════════════════════════════════════════
-auth.onAuthStateChanged(async user => {
-  if (user) {
-    showLoading('Loading profile...');
-    try {
-      const snap = await db.ref(`users/${user.uid}`).get();
-      if (snap.exists()) {
-        APP.profile = snap.val();
-        if (APP.profile.disabled) {
-          showToast('⛔ Account is disabled. Contact admin.', 'error');
-          auth.signOut();
-          return;
-        }
-        APP.user = user;
-        afterLogin();
-      } else {
-        // First admin setup
-        APP.profile = { name: user.email, role: 'admin', store: '', email: user.email };
-        APP.user = user;
-        db.ref(`users/${user.uid}`).set(APP.profile);
-        afterLogin();
+// ── Load DB: Firebase first, then localStorage, then defaults ──
+async function lDB(){
+  // Try Firebase
+  if(fbDB){
+    try{
+      const snap = await fbDB.ref('kidza/db').get();
+      if(snap.exists()){
+        const d = snap.val();
+        DB = Object.assign({users:[],courses:[],results:[],matProg:{},attempts:{}}, d);
+        // Also update local cache
+        try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(DB)); }catch(e){}
+        return;
       }
-    } catch(e) {
-      hideLoading();
-      showToast('Error loading profile: '+e.message, 'error');
+    }catch(e){ console.warn('Firebase read error:',e); }
+  }
+  // Fallback: localStorage
+  try{
+    const s = localStorage.getItem(LOCAL_KEY);
+    if(s){ const d=JSON.parse(s); DB=Object.assign({users:[],courses:[],results:[],matProg:{},attempts:{}},d); return; }
+  }catch(e){}
+  // First run: use defaults and push to Firebase
+  DB = JSON.parse(JSON.stringify(DB_DEFAULT));
+  sDB();
+}
+
+// ── Session (remember-me is per-device by design) ──
+let CUR={user:null};
+function saveS(uid){try{localStorage.setItem(SK,uid);}catch(e){}}
+function clearS(){try{localStorage.removeItem(SK);}catch(e){}}
+function restoreS(){
+  try{const uid=localStorage.getItem(SK);if(uid){const u=DB.users.find(x=>x.id===uid);if(u){CUR.user=u;return true;}}}catch(e){}
+  return false;
+}
+
+// ═══════════════════════
+// UTIL
+// ═══════════════════════
+function nuid(){return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function $(i){return document.getElementById(i);}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');window.scrollTo(0,0);
+}
+function closeM(id){$(id).classList.add('hidden');}
+function openM(id){$(id).classList.remove('hidden');}
+
+// ═══════════════════════
+// MIT APP INVENTOR BRIDGE (added)
+// ═══════════════════════
+window.AppInventor = window.AppInventor || {};
+function sendToMIT(message){
+  try{
+    if(window.AppInventor && window.AppInventor.setWebViewString){
+      window.AppInventor.setWebViewString(message);
     }
-  } else {
-    showAuthScreen();
-  }
-});
-
-async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pwd   = document.getElementById('loginPassword').value;
-  const rememberMe = document.getElementById('rememberMe').checked;
-  const errEl = document.getElementById('loginError');
-  errEl.style.display = 'none';
-
-  if (!email || !pwd) { errEl.textContent = 'Please enter email and password'; errEl.style.display='block'; return; }
-
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div> Signing in...';
-
-  try {
-    const persistence = rememberMe
-      ? firebase.auth.Auth.Persistence.LOCAL
-      : firebase.auth.Auth.Persistence.SESSION;
-    await auth.setPersistence(persistence);
-    await auth.signInWithEmailAndPassword(email, pwd);
-    // auth.onAuthStateChanged will handle the rest
-  } catch(e) {
-    let msg = 'Sign in failed. Check email and password.';
-    if (e.code === 'auth/user-not-found') msg = 'No account found with this email.';
-    if (e.code === 'auth/wrong-password') msg = 'Incorrect password.';
-    if (e.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
-    errEl.textContent = msg;
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.innerHTML = '<span id="loginBtnText">Sign In</span>';
-  }
+  }catch(e){console.warn('AppInventor bridge error:',e);}
 }
 
-async function sendPasswordReset() {
-  const email = document.getElementById('forgotEmail').value.trim();
-  if (!email) { showToast('Enter your email address', 'error'); return; }
-  try {
-    await auth.sendPasswordResetEmail(email);
-    showToast('✅ Reset link sent to '+email, 'success');
-    closeModal('forgotPwdModal');
-  } catch(e) {
-    showToast('Error: '+e.message, 'error');
-  }
+// ═══════════════════════
+// NAVIGATION MANAGER (added — centralized screen history stack)
+// Replaces ad-hoc NS array logic. Old helper names (navTo/navPush/navBack)
+// are kept as thin aliases so all existing onclick="" calls keep working.
+// ═══════════════════════
+const NS=[]; // screen history stack — kept for backward compatibility with existing code (admin init etc.)
+const ROOT_SCREENS=['s-login','s-home','s-admin']; // screens where "back" should exit (or do nothing on login)
+
+function navigateTo(screenId){
+  // Prevent duplicate consecutive history entries / navigation loops
+  if(NS[NS.length-1]===screenId) { showScreen(screenId); return; }
+  NS.push(screenId);
+  try{ history.pushState({screen:screenId}, document.title); }catch(e){}
+  showScreen(screenId);
 }
 
-function doLogout() {
-  if (!confirm('Sign out of Inventory Management System?')) return;
-  auth.signOut();
-}
-
-function showAuthScreen() {
-  document.getElementById('appShell').style.display = 'none';
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('loginBtn').disabled = false;
-  document.getElementById('loginBtn').innerHTML = '<span>Sign In</span>';
-  document.getElementById('loginError').style.display = 'none';
-  hideLoading();
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  AFTER LOGIN
-// ═══════════════════════════════════════════════════════════════
-function afterLogin() {
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('appShell').style.display = 'flex';
-
-  const p = APP.profile;
-  const isAdmin = p.role === 'admin';
-  const initials = (p.name||p.email||'U').slice(0,2).toUpperCase();
-
-  document.getElementById('topbarName').textContent = p.name || p.store || 'User';
-  const av = document.getElementById('topbarAvatar');
-  av.textContent = initials;
-  if (isAdmin) av.classList.add('admin'); else av.classList.remove('admin');
-
-  // Show/hide admin items
-  document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
-
-  // Load SOH from cache then Firebase
-  loadSOH();
-  setCurrentWeek();
-  loadPIAssignment();
-  renderDashboard();
-  renderHistory();
-  if (isAdmin) {
-    loadAllUsers();
-    loadGSheetURL();
-    loadSOHFiles();
-  }
-
-  // Listen for PI assignments in real-time
-  db.ref('pi_assignments').on('value', snap => {
-    const all = snap.val() || {};
-    APP.piAssignment = all[APP.piWeek] || null;
-    updatePISection();
-    renderDashboard();
-  });
-
-  hideLoading();
-  switchSection('dashboard', null);
-}
-
-function setCurrentWeek() {
-  APP.piWeek = getWeekString();
-  document.getElementById('piWeekBadge').textContent = APP.piWeek;
-  document.getElementById('storeWeekBadge').textContent = APP.piWeek;
-  document.getElementById('adminWeekBadge').textContent = APP.piWeek;
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  NAVIGATION
-// ═══════════════════════════════════════════════════════════════
-function switchSection(name, btn) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn, .desktop-nav-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('sec-'+name).classList.add('active');
-  if (btn) { btn.classList.add('active'); }
-  // Also activate matching desktop nav item
-  document.querySelectorAll(`[data-sec="${name}"]`).forEach(b => b.classList.add('active'));
-
-  if (name === 'pi') { initPISection(); }
-  if (name === 'history') { renderHistory(); }
-  if (name === 'dashboard') { renderDashboard(); }
-  if (name === 'admin') { loadAllUsers(); }
-  if (name === 'upload') { loadSOHFiles(); }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  SOH — Load & Render
-// ═══════════════════════════════════════════════════════════════
-function loadSOH() {
-  const cached = CACHE.get('soh');
-  if (cached && cached.length) {
-    APP.sohData = cached;
-    buildSOHMap();
-    initSOHFilters();
-    renderSOH();
-  }
-  // Sync from Firebase
-  db.ref('soh').once('value').then(snap => {
-    const val = snap.val();
-    if (val) {
-      // Convert object back to array if needed
-      const arr = Array.isArray(val) ? val : Object.values(val);
-      APP.sohData = arr;
-      CACHE.set('soh', arr);
-      buildSOHMap();
-      initSOHFilters();
-      renderSOH();
-    }
-  }).catch(()=>{});
-}
-
-function buildSOHMap() {
-  APP.sohMap = {};
-  APP.sohData.forEach(r => {
-    const concat = (r.Concatinate||r.Concatenate||'').trim().toUpperCase();
-    const code   = (r.ProductCode||'').trim().toUpperCase();
-    if (concat) APP.sohMap[concat] = r;
-    if (code && !APP.sohMap[code]) APP.sohMap[code] = r;
-    // Also store by storecode combo
-    const store = (r.StoreName||'').trim();
-    if (store && code) APP.sohMap[(store+code).toUpperCase()] = r;
-  });
-}
-
-function lookupSOH(code) {
-  const store = APP.profile?.store || '';
-  return APP.sohMap[(store+code).toUpperCase()]
-      || APP.sohMap[code.toUpperCase()]
-      || null;
-}
-
-function initSOHFilters() {
-  const isAdmin = APP.profile?.role === 'admin';
-  const wrap = document.getElementById('sohStoreFilter');
-  wrap.innerHTML = '';
-  if (!isAdmin) return;
-
-  const stores = ['ALL', ...new Set(APP.sohData.map(r=>(r.StoreName||'').trim()).filter(Boolean))];
-  stores.forEach(s => {
-    const chip = document.createElement('span');
-    chip.className = 'filter-chip' + (s === APP.activeSohStore ? ' active' : '');
-    chip.textContent = s === 'ALL' ? 'All Stores' : s;
-    chip.onclick = () => {
-      APP.activeSohStore = s;
-      APP.sohPage = 0;
-      document.querySelectorAll('#sohStoreFilter .filter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      renderSOH();
-    };
-    wrap.appendChild(chip);
-  });
-
-  // Also populate history store filter
-  const histSel = document.getElementById('histFilterStore');
-  histSel.innerHTML = '<option value="ALL">All Stores</option>';
-  STORES.forEach(s => histSel.innerHTML += `<option value="${s}">${s}</option>`);
-}
-
-function renderSOH() {
-  const q = (document.getElementById('sohSearch').value||'').trim().toLowerCase();
-  const isAdmin = APP.profile?.role === 'admin';
-  let data = APP.sohData;
-
-  if (!isAdmin) {
-    data = data.filter(r => (r.StoreName||'').trim() === APP.profile?.store);
-  } else if (APP.activeSohStore !== 'ALL') {
-    data = data.filter(r => (r.StoreName||'').trim() === APP.activeSohStore);
-  }
-
-  if (q) {
-    data = data.filter(r =>
-      (r.ProductCode||'').toLowerCase().includes(q) ||
-      (r.Brand||'').toLowerCase().includes(q) ||
-      (r.Class||'').toLowerCase().includes(q) ||
-      (r.Department||'').toLowerCase().includes(q) ||
-      (r.Concatinate||r.Concatenate||'').toLowerCase().includes(q)
-    );
-  }
-
-  const total = data.length;
-  const start = APP.sohPage * APP.SOH_PAGE_SIZE;
-  const page  = data.slice(start, start + APP.SOH_PAGE_SIZE);
-  const el    = document.getElementById('sohContent');
-
-  if (!total) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><h3>No Records Found</h3><p>Try a different search or ask admin to upload data</p></div>';
-    document.getElementById('sohPageInfo').textContent = '';
+function navigateBack(){
+  const current=NS[NS.length-1];
+  if(NS.length>1){
+    NS.pop();
+    const prev=NS[NS.length-1];
+    showScreen(prev);
     return;
   }
-
-  el.innerHTML = `<div class="tbl-wrap"><table>
-    <thead><tr><th>Store</th><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>MRP</th><th>SOH</th></tr></thead>
-    <tbody>${page.map(r=>`<tr>
-      <td>${escHtml(r.StoreName||'')}</td>
-      <td class="td-code">${escHtml(r.ProductCode||'')}</td>
-      <td>${escHtml(r.Department||'—')}</td>
-      <td>${escHtml(r.Class||'—')}</td>
-      <td>${escHtml(r.Brand||'—')}</td>
-      <td>₹${escHtml(r.MRP||'—')}</td>
-      <td><b>${escHtml(r.SOH||r.soh||'—')}</b></td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
-
-  const pageCount = Math.ceil(total / APP.SOH_PAGE_SIZE);
-  let pageInfo = `Showing ${start+1}–${Math.min(start+APP.SOH_PAGE_SIZE,total)} of ${total}`;
-  if (pageCount > 1) {
-    pageInfo += ` <button class="btn btn-xs btn-secondary" onclick="APP.sohPage=Math.max(0,APP.sohPage-1);renderSOH()" ${APP.sohPage===0?'disabled':''}>‹</button>
-    Page ${APP.sohPage+1}/${pageCount}
-    <button class="btn btn-xs btn-secondary" onclick="APP.sohPage=Math.min(${pageCount-1},APP.sohPage+1);renderSOH()" ${APP.sohPage===pageCount-1?'disabled':''}>›</button>`;
+  // Only one (or zero) screens in stack — we're at a root screen
+  if(current==='s-home'||current==='s-admin'){
+    // Home/Admin back → notify MIT App Inventor to close the app
+    sendToMIT('EXIT');
+    return;
   }
-  document.getElementById('sohPageInfo').innerHTML = pageInfo;
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  SOH UPLOAD
-// ═══════════════════════════════════════════════════════════════
-function handleSOHUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  showLoading('Parsing CSV...');
-  Papa.parse(file, {
-    header: true, skipEmptyLines: true,
-    complete: async (results) => {
-      const rows = results.data;
-      if (!rows.length) { hideLoading(); showToast('CSV is empty', 'error'); return; }
-      showLoading(`Uploading ${rows.length} records...`);
-      APP.sohData = rows;
-      CACHE.set('soh', rows);
-      buildSOHMap();
-      initSOHFilters();
-      renderSOH();
-      // Store in Firebase
-      try {
-        await db.ref('soh').set(rows);
-        // Record file meta
-        const fileMeta = { name: file.name, rows: rows.length, uploadedAt: new Date().toISOString(), uploadedBy: APP.profile?.name };
-        const fileKey = Date.now().toString();
-        await db.ref(`sohFiles/${fileKey}`).set(fileMeta);
-        hideLoading();
-        showToast(`✅ ${rows.length} records uploaded`, 'success');
-        loadSOHFiles();
-      } catch(e) {
-        hideLoading();
-        showToast('Upload failed: '+e.message, 'error');
-      }
-    }
-  });
-  event.target.value = '';
-  document.getElementById('sohUploadStatus').innerHTML = `<div class="chip chip-blue">Processing...</div>`;
-}
-
-async function loadSOHFiles() {
-  const el = document.getElementById('sohFilesList');
-  if (!el) return;
-  try {
-    const snap = await db.ref('sohFiles').get();
-    const val = snap.val();
-    if (!val) { el.innerHTML = '<div style="color:var(--text2);font-size:13px;">No files uploaded yet</div>'; return; }
-    const files = Object.entries(val).sort((a,b)=>b[0]-a[0]);
-    el.innerHTML = files.map(([k,f])=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;">
-        <div>
-          <div style="font-weight:600;font-size:13px;">📄 ${escHtml(f.name)}</div>
-          <div style="font-size:11px;color:var(--text2);">${f.rows} records · ${fmtDate(f.uploadedAt)} · by ${escHtml(f.uploadedBy||'Admin')}</div>
-        </div>
-        <button class="btn btn-xs btn-danger" onclick="deleteSOHFile('${k}')">🗑</button>
-      </div>`).join('');
-    document.getElementById('sohUploadStatus').innerHTML = `<div class="info-box green">✅ ${files.length} file(s) in database</div>`;
-  } catch(e) {}
-}
-
-async function deleteSOHFile(key) {
-  if (!confirm('Delete this upload record?')) return;
-  await db.ref(`sohFiles/${key}`).remove();
-  loadSOHFiles();
-  showToast('File record deleted');
-}
-
-async function deleteAllSOH() {
-  if (!confirm('Delete ALL SOH data? This cannot be undone.')) return;
-  if (!confirm('⚠️ Are you absolutely sure? All stock data will be erased.')) return;
-  showLoading('Deleting...');
-  await db.ref('soh').remove();
-  await db.ref('sohFiles').remove();
-  APP.sohData = [];
-  APP.sohMap = {};
-  CACHE.del('soh');
-  renderSOH();
-  loadSOHFiles();
-  hideLoading();
-  showToast('All SOH data deleted', 'success');
-}
-
-// ── Google Sheet Sync ──
-function saveGSheetURL() {
-  const url = document.getElementById('gsheetURL').value.trim();
-  if (!url) return;
-  db.ref('settings/gsheetURL').set(url);
-  CACHE.set('gsheetURL', url);
-  showToast('✅ Google Sheet URL saved', 'success');
-}
-
-function loadGSheetURL() {
-  const cached = CACHE.get('gsheetURL');
-  if (cached) document.getElementById('gsheetURL').value = cached;
-  db.ref('settings/gsheetURL').get().then(snap => {
-    if (snap.val()) document.getElementById('gsheetURL').value = snap.val();
-  });
-}
-
-async function syncGSheet() {
-  const url = document.getElementById('gsheetURL').value.trim();
-  if (!url) { showToast('Enter a Google Sheet URL first', 'error'); return; }
-  const statusEl = document.getElementById('gsheetStatus');
-  statusEl.textContent = 'Syncing...';
-  try {
-    const res = await fetch(url);
-    const text = await res.text();
-    const result = Papa.parse(text, { header: true, skipEmptyLines: true });
-    if (!result.data.length) { statusEl.textContent = '⚠️ No data found'; return; }
-    showLoading(`Syncing ${result.data.length} records...`);
-    APP.sohData = result.data;
-    CACHE.set('soh', result.data);
-    buildSOHMap();
-    initSOHFilters();
-    renderSOH();
-    await db.ref('soh').set(result.data);
-    hideLoading();
-    statusEl.innerHTML = `<span class="chip chip-green">✅ ${result.data.length} records synced at ${new Date().toLocaleTimeString()}</span>`;
-    showToast(`✅ Synced ${result.data.length} records from Google Sheet`, 'success');
-  } catch(e) {
-    hideLoading();
-    statusEl.innerHTML = `<span class="chip chip-red">❌ Sync failed: ${e.message}</span>`;
-    showToast('Sync failed. Ensure the sheet is published as CSV.', 'error');
+  if(current==='s-login'||!current){
+    // Nothing to go back to from login
+    return;
   }
+  // Fallback: go to home
+  goHome();
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  PHYSICAL INVENTORY
-// ═══════════════════════════════════════════════════════════════
-function loadPIAssignment() {
-  db.ref('pi_assignments').once('value').then(snap => {
-    const all = snap.val() || {};
-    APP.piAssignment = all[APP.piWeek] || null;
-    updatePISection();
+function clearNavigation(){
+  NS.length=0;
+  try{ history.replaceState({},document.title); }catch(e){}
+}
+
+// Backward-compatible aliases used throughout the existing codebase
+function navPush(id){navigateTo(id);}
+function navBack(){navigateBack();}
+function navTo(id){navigateTo(id);}
+
+// Hardware / browser back button (also used by MIT App Inventor WebViewer)
+window.addEventListener('popstate',function(){navigateBack();});
+
+// Notification
+function askNotif(){if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();}
+function pushNotif(t,b){if('Notification' in window&&Notification.permission==='granted')new Notification(t,{body:b});}
+
+// ═══════════════════════
+// AUTH
+// ═══════════════════════
+async function doLogin(){
+  const un=$('l-user').value.trim().toLowerCase();
+  const pw=$('l-pass').value;
+  const rem=$('l-rem').checked;
+  // Pull latest DB from Firebase so users added on another device are visible
+  const btn=document.querySelector('#s-login .btn-blue');
+  if(btn){btn.textContent='Syncing…';btn.disabled=true;}
+  await lDB();
+  if(btn){btn.textContent='Sign In';btn.disabled=false;}
+  const user=DB.users.find(u=>u.username.toLowerCase()===un&&u.password===pw);
+  if(!user){$('l-err').textContent='Invalid username or password.';$('l-err').classList.remove('hidden');sendToMIT('LOGIN_FAILED');return;}
+  $('l-err').classList.add('hidden');
+  CUR.user=user;
+  if(rem)saveS(user.id);
+  askNotif();
+  sendToMIT('LOGIN_SUCCESS'); // MIT App Inventor bridge event
+  if(user.role==='admin'){NS.length=0;NS.push('s-admin');renderAdmin();showScreen('s-admin');}
+  else{NS.length=0;NS.push('s-home');goHome();}
+}
+async function syncNow(){
+  const btn=$('sync-btn');
+  if(btn){btn.textContent='Syncing…';btn.disabled=true;}
+  setSyncStatus('syncing','Syncing…');
+  try{
+    await lDB();
+    setSyncStatus(fbDB?'online':'offline', fbDB?'Online':'Offline');
+    sendToMIT('SYNC_SUCCESS');
+  }catch(e){
+    setSyncStatus('offline','Offline');
+    sendToMIT('SYNC_FAILED');
+  }
+  if(btn){btn.textContent='✓ Done';setTimeout(()=>{btn.textContent='↻ Sync';btn.disabled=false;},1500);}
+  renderAdmin();
+}
+function doLogout(){sendToMIT('LOGOUT');clearS();CUR.user=null;$('l-user').value='';$('l-pass').value='';$('l-rem').checked=false;clearNavigation();showScreen('s-login');}
+
+// ═══════════════════════
+// HOME
+// ═══════════════════════
+function goHome(){
+  const u=CUR.user;
+  $('h-sub').textContent='Hello, '+u.name.split(' ')[0];
+  const myC=DB.courses.filter(c=>(c.assignedUsers||[]).includes(u.id));
+  const allA=Object.entries(DB.attempts).filter(([k])=>k.startsWith(u.id+'_')).flatMap(([,v])=>v);
+  const pcts=allA.map(a=>a.pct);
+  const avg=pcts.length?Math.round(pcts.reduce((s,v)=>s+v,0)/pcts.length):0;
+  const best=pcts.length?Math.max(...pcts):0;
+  $('home-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${myC.length}</div><div class="stat-lbl">Courses</div></div>
+    <div class="stat-card"><div class="stat-num">${allA.length}</div><div class="stat-lbl">Attempts</div></div>
+    <div class="stat-card"><div class="stat-num">${avg}%</div><div class="stat-lbl">Avg Score</div></div>
+    <div class="stat-card"><div class="stat-num">${best}%</div><div class="stat-lbl">Best Score</div></div>`;
+  // Notifs
+  const ns=[];
+  myC.forEach(c=>{const k=u.id+'_'+c.id;const a=DB.attempts[k]||[];
+    if(!a.length)ns.push('New quiz assigned: <b>'+esc(c.name)+'</b>');
+    else if(a.length===1)ns.push('1 attempt left for <b>'+esc(c.name)+'</b>');
   });
+  $('notif-area').innerHTML=ns.map(n=>`<div class="notif-card"><span style="font-size:20px;">&#128276;</span><div><div style="font-weight:700;font-size:13px;">Notification<span class="notif-dot"></span></div><div style="font-size:13px;">${n}</div></div></div>`).join('');
+  if(!myC.length){$('home-courses').innerHTML='<p class="muted ctr" style="padding:16px;">No courses assigned yet.</p>';}
+  else{
+    $('home-courses').innerHTML=myC.map(c=>{
+      const k=u.id+'_'+c.id;const a=DB.attempts[k]||[];
+      const bp=a.length?Math.max(...a.map(x=>x.pct)):null;
+      const md=allMatsDone(u.id,c.id);
+      const badge=a.length>=2?'<span class="badge bd-grey">Done</span>':md?'<span class="badge bd-pass">Ready</span>':'<span class="badge bd-warn">Materials</span>';
+      return `<div class="item-row" onclick="openCourse('${c.id}')">
+        <div class="item-icon ic-course">&#128218;</div>
+        <div class="item-info"><div class="item-title">${esc(c.name)}</div>
+          <div class="item-sub">${c.questions.length} Q &middot; ${a.length}/2 attempts${bp!==null?' &middot; Best: '+bp+'%':''}</div></div>
+        ${badge}</div>`;
+    }).join('');
+  }
+  showScreen('s-home');
 }
 
-function initPISection() {
-  updatePISection();
-  if (APP.piItems.length === 0) loadPIDraft();
-  renderPIItems();
-  checkRecountStatus();
+function allMatsDone(uid,cid){
+  const c=DB.courses.find(x=>x.id===cid);
+  if(!c||!c.materials||!c.materials.length)return true;
+  return c.materials.every(m=>DB.matProg[uid+'_'+cid+'_'+m.id]);
 }
 
-function updatePISection() {
-  const assigned = APP.piAssignment;
-  const store = APP.profile?.store;
-  const isAssigned = assigned && assigned.stores && assigned.stores.includes(store);
-
-  document.getElementById('piNotAssigned').style.display = isAssigned ? 'none' : 'block';
-  document.getElementById('piActive').style.display = isAssigned ? 'block' : 'none';
-
-  if (isAssigned) {
-    document.getElementById('piStatusBanner').style.display = 'block';
-    document.getElementById('piStatusBanner').innerHTML = `
-      <div class="info-box blue" style="margin-bottom:12px;">
-        📌 <b>PI Assigned for ${APP.piWeek}</b> — Assigned on ${fmtDate(assigned.assignedAt)}
+// ═══════════════════════
+// COURSE
+// ═══════════════════════
+let CID=null;
+function openCourse(cid){
+  CID=cid;
+  const c=DB.courses.find(x=>x.id===cid),u=CUR.user;
+  $('cd-bar').textContent=c.name;
+  $('cd-name').textContent=c.name;
+  $('cd-desc').textContent=c.desc||'';
+  const mats=c.materials||[];
+  if(!mats.length){$('cd-mats').innerHTML='<p class="muted" style="font-size:13px;">No materials.</p>';}
+  else{
+    $('cd-mats').innerHTML=mats.map(m=>{
+      const done=DB.matProg[u.id+'_'+cid+'_'+m.id];
+      const ic={video:'&#127916;',ppt:'&#128202;',pdf:'&#128196;',gif:'&#128248;',image:'&#128248;'};
+      const cc={video:'ic-video',ppt:'ic-ppt',pdf:'ic-pdf',gif:'ic-img',image:'ic-img'};
+      return `<div class="item-row${done?' done':''}" onclick="${done?'void 0':'viewMat(\''+cid+'\',\''+m.id+'\')'}">
+        <div class="item-icon ${cc[m.type]||'ic-pdf'}">${ic[m.type]||'&#128206;'}</div>
+        <div class="item-info"><div class="item-title">${esc(m.title)}</div><div class="item-sub">${m.type.toUpperCase()}</div></div>
+        ${done?'<span class="badge bd-pass">Done</span>':'<span class="badge bd-blue">View</span>'}
       </div>`;
-  } else {
-    document.getElementById('piStatusBanner').style.display = 'none';
+    }).join('');
   }
+  const k=u.id+'_'+c.id;const a=DB.attempts[k]||[];const md=allMatsDone(u.id,cid);
+  if(a.length>=2){const bp=Math.max(...a.map(x=>x.pct));$('cd-quiz').innerHTML=`<div class="alert al-warn">Both attempts used. Best: <b>${bp}%</b></div>`;}
+  else if(!md){$('cd-quiz').innerHTML=`<div class="alert al-warn">Complete all materials first.</div>`;}
+  else{$('cd-quiz').innerHTML=`<button class="btn btn-blue btn-full" onclick="openQType('${cid}')">Take Quiz (Attempt ${a.length+1}/2)</button>`;}
+  navTo('s-course');
+  sendToMIT('COURSE_OPENED'); // MIT App Inventor bridge event
 }
 
-function piCodeInput() {
-  document.getElementById('piProductInfo').style.display = 'none';
-}
-
-function lookupPI() {
-  const code = document.getElementById('piBarcode').value.trim().toUpperCase();
-  if (!code) return;
-  const row = lookupSOH(code);
-  if (row) {
-    document.getElementById('pi_code').textContent = row.ProductCode || code;
-    document.getElementById('pi_dept').textContent = row.Department || '—';
-    document.getElementById('pi_class').textContent = row.Class || '—';
-    document.getElementById('pi_brand').textContent = row.Brand || '—';
-    document.getElementById('pi_mrp').textContent = row.MRP ? '₹'+row.MRP : '—';
-    document.getElementById('pi_soh').textContent = row.SOH || row.soh || '—';
-    document.getElementById('piProductInfo').style.display = 'block';
-  } else {
-    document.getElementById('piProductInfo').style.display = 'none';
-  }
-  document.getElementById('piQty').focus();
-}
-
-function addPIItem() {
-  const code = document.getElementById('piBarcode').value.trim().toUpperCase();
-  const qty  = parseInt(document.getElementById('piQty').value);
-  if (!code) { showToast('Enter a product code', 'error'); return; }
-  if (isNaN(qty) || qty < 0) { showToast('Enter a valid quantity', 'error'); return; }
-
-  const row = lookupSOH(code) || {};
-  const existing = APP.piItems.find(i => i.code === code);
-  if (existing) {
-    existing.physQty = qty;
-    showToast(`✏️ Updated ${code}: Qty ${qty}`);
-  } else {
-    APP.piItems.push({
-      code,
-      dept:  row.Department || '—',
-      cls:   row.Class      || '—',
-      brand: row.Brand      || '—',
-      mrp:   row.MRP        || '0',
-      soh:   parseFloat(row.SOH || row.soh || '0') || 0,
-      physQty: qty
-    });
-    showToast(`✅ Added ${code}`, 'success');
-  }
-
-  // Auto-save to Firebase
-  autoSavePI();
-
-  document.getElementById('piBarcode').value = '';
-  document.getElementById('piQty').value = '';
-  document.getElementById('piProductInfo').style.display = 'none';
-  document.getElementById('piBarcode').focus();
-  renderPIItems();
-}
-
-function autoSavePI() {
-  if (!APP.user) return;
-  const draft = {
-    store: APP.profile.store,
-    week: APP.piWeek,
-    items: APP.piItems,
-    savedAt: new Date().toISOString()
-  };
-  fbSet(`pi_drafts/${APP.user.uid}`, draft);
-  CACHE.set('piDraft', draft);
-}
-
-async function loadPIDraft() {
-  const cached = CACHE.get('piDraft');
-  if (cached && cached.week === APP.piWeek && cached.store === APP.profile?.store) {
-    APP.piItems = cached.items || [];
-    renderPIItems();
-    if (APP.piItems.length) showToast(`📂 Loaded ${APP.piItems.length} items from draft`, 'success');
-  }
-  // Also check Firebase
-  try {
-    const snap = await db.ref(`pi_drafts/${APP.user.uid}`).get();
-    const val = snap.val();
-    if (val && val.week === APP.piWeek) {
-      APP.piItems = val.items || [];
-      CACHE.set('piDraft', val);
-      renderPIItems();
+// ═══════════════════════
+// MATERIAL
+// ═══════════════════════
+let VM={cid:null,mid:null};
+function viewMat(cid,mid){
+  VM={cid,mid};
+  const c=DB.courses.find(x=>x.id===cid),m=c.materials.find(x=>x.id===mid);
+  $('mat-bar').textContent=m.title;
+  let h='<div class="pg-title mb2">'+esc(m.title)+'</div>';
+  const url=(m.url||'').trim();
+  if(m.type==='video'){
+    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No video URL set.</div>';}
+    else if(url.includes('youtu')){
+      const ym=url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+      const vid=ym?ym[1]:'';
+      if(vid){h+='<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:14px;overflow:hidden;background:#000;"><iframe src="https://www.youtube-nocookie.com/embed/'+vid+'?rel=0&playsinline=1&modestbranding=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen title="'+esc(m.title)+'"></iframe></div>';}
+      else{h+='<div class="alert al-warn">Could not parse YouTube URL.</div>';}
+    }else if(url.includes('vimeo.com')){
+      const vid=url.split('/').pop().split('?')[0];
+      h+='<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:14px;overflow:hidden;background:#000;"><iframe src="https://player.vimeo.com/video/'+vid+'?playsinline=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay;fullscreen" allowfullscreen></iframe></div>';
+    }else{h+='<video controls playsinline preload="metadata" style="width:100%;border-radius:14px;background:#000;" src="'+esc(url)+'"><p>Cannot play video.</p></video>';}
+  }else if(m.type==='ppt'){
+    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No PPT URL set.</div>';}
+    else{
+      let vu=url;
+      // Convert any Google Drive share link to embeddable preview URL
+      const gdMatch=url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if(gdMatch){vu='https://drive.google.com/file/d/'+gdMatch[1]+'/preview';}
+      h+='<div style="border-radius:14px;overflow:hidden;border:1.5px solid var(--border);"><iframe src="'+vu+'" style="width:100%;height:420px;border:none;" allow="autoplay" title="'+esc(m.title)+'"></iframe></div><p style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center;">Presentation loads inline — no external app needed.</p>';
     }
-  } catch(e){}
+  }else if(m.type==='pdf'){
+    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No PDF URL set.</div>';}
+    else{h+='<div style="border-radius:14px;overflow:hidden;border:1.5px solid var(--border);"><iframe src="'+esc(url)+'" style="width:100%;height:440px;border:none;"></iframe></div>';}
+  }else if(m.type==='gif'||m.type==='image'){
+    if(!url){h+='<div style="background:#f1f5f9;border-radius:14px;padding:40px;text-align:center;color:var(--muted);">No image URL set.</div>';}
+    else{h+='<img src="'+esc(url)+'" style="width:100%;border-radius:14px;" alt="'+esc(m.title)+'">';}
+  }
+  $('mat-content').innerHTML=h;
+  const done=DB.matProg[CUR.user.id+'_'+cid+'_'+mid];
+  if(done){$('mat-done-area').innerHTML='<div class="alert al-ok">Already marked complete.</div>';}
+  else{$('mat-done-area').innerHTML='<div class="alert al-warn mb1">Once marked complete, you cannot re-view this material.</div><button class="btn btn-success btn-full" onclick="markMatDone()">Mark as Completed</button>';}
+  navTo('s-mat');
+}
+function markMatDone(){
+  if(!confirm('Mark complete? You will not be able to re-view.'))return;
+  DB.matProg[CUR.user.id+'_'+VM.cid+'_'+VM.mid]=true;sDB();
+  sendToMIT('MATERIAL_COMPLETED'); // MIT App Inventor bridge event
+  $('mat-done-area').innerHTML='<div class="alert al-ok">Marked complete!</div>';
+  setTimeout(()=>openCourse(VM.cid),800);
+}
+function backFromMat(){if(CID)openCourse(CID);else navBack();}
+
+// ═══════════════════════
+// QUIZ TYPE
+// ═══════════════════════
+let QMODE=null;
+function openQType(cid){
+  CID=cid;
+  const c=DB.courses.find(x=>x.id===cid),k=CUR.user.id+'_'+c.id,a=DB.attempts[k]||[];
+  $('qt-cname').textContent=c.name;
+  $('qt-info').textContent='Attempt '+(a.length+1)+' of 2. Choose your quiz mode.';
+  navTo('s-qtype');
 }
 
-function renderPIItems() {
-  const count = APP.piItems.length;
-  document.getElementById('piCount').textContent = count;
-  document.getElementById('submitPIBtn').disabled = count === 0;
+// ═══════════════════════
+// INSTRUCTIONS
+// ═══════════════════════
+function openInst(mode){
+  QMODE=mode;
+  const c=DB.courses.find(x=>x.id===CID),k=CUR.user.id+'_'+c.id,a=DB.attempts[k]||[];
+  const t=mode==='speed'?c.timerS:c.timerK;
+  $('inst-ttl').textContent=(mode==='speed'?'Speed Quiz':'Knowledge Quiz')+' — '+c.name;
+  $('inst-sub').textContent='Attempt '+(a.length+1)+' of 2';
+  const steps=['This quiz has <b>'+c.questions.length+' questions</b>.',
+    'You have <b>'+t+' seconds per question</b>.',
+    'Select one answer — you cannot change it once selected.',
+    'Answers shown <b>after all questions</b>.',
+    'Passing score: <b>'+c.passPercent+'%</b>.',
+    'You have <b>2 total attempts</b>. Highest score is recorded.',
+    'Do not close or refresh during the quiz.'];
+  $('inst-list').innerHTML=steps.map((s,i)=>'<div class="inst-step"><div class="inst-num">'+(i+1)+'</div><div style="font-size:14px;">'+s+'</div></div>').join('');
+  if(a.length===1){$('inst-warn').innerHTML='<div class="alert al-warn">This is your <b>final attempt</b>.</div>';$('inst-warn').classList.remove('hidden');}
+  else $('inst-warn').classList.add('hidden');
+  navTo('s-inst');
+}
 
-  const el = document.getElementById('piItemList');
-  if (!count) {
-    el.innerHTML = '<div class="empty" style="padding:20px"><p>No items counted yet</p></div>';
-    return;
-  }
+// ═══════════════════════
+// QUIZ ENGINE
+// ═══════════════════════
+let QS={cid:null,mode:null,cur:0,answers:[],ti:null,tl:0,qOrder:[]};
+const LT=['A','B','C','D','E'];
+function shuffleArr(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function startQuiz(){
+  const c=DB.courses.find(x=>x.id===CID),k=CUR.user.id+'_'+c.id,a=DB.attempts[k]||[];
+  const qOrder=shuffleArr(c.questions.map((_,i)=>i));
+  QS={cid:CID,mode:QMODE,cur:0,answers:[],ti:null,tl:0,qOrder};
+  $('qz-name').textContent=CUR.user.name;
+  $('qz-pips').innerHTML=[0,1].map(i=>'<div class="pip'+(i<a.length?' used':'')+'"></div>').join('')+'<span style="font-size:11px;color:rgba(255,255,255,.65);margin-left:4px;">Att.'+(a.length+1)+'</span>';
+  navTo('s-quiz');loadQ();
+  sendToMIT('QUIZ_STARTED'); // MIT App Inventor bridge event
+}
+function loadQ(){
+  clearInterval(QS.ti);
+  const c=DB.courses.find(x=>x.id===QS.cid),q=c.questions[QS.qOrder[QS.cur]];
+  $('qz-prog').style.width=(QS.cur/c.questions.length*100)+'%';
+  $('qz-cnt').textContent='Q '+(QS.cur+1)+' / '+c.questions.length;
+  $('qz-q').textContent=q.question;
+  $('qz-opts').innerHTML=q.options.map((o,i)=>'<div class="opt-card" id="qo'+i+'" onclick="selOpt('+i+')"><div class="opt-letter">'+LT[i]+'</div><div class="opt-text">'+esc(o)+'</div></div>').join('');
+  $('qz-next').classList.add('hidden');
+  startT(QMODE==='speed'?c.timerS:c.timerK);
+}
+function startT(s){
+  QS.tl=s;upT();
+  QS.ti=setInterval(()=>{QS.tl--;upT();if(QS.tl<=0){clearInterval(QS.ti);autoN();}},1000);
+}
+function upT(){
+  $('qz-tsec').textContent=QS.tl;
+  $('qz-timer').classList.toggle('urgent',QS.tl<=5);
+}
+function selOpt(i){
+  clearInterval(QS.ti);
+  const c=DB.courses.find(x=>x.id===QS.cid),q=c.questions[QS.qOrder[QS.cur]];
+  document.querySelectorAll('.opt-card').forEach(o=>o.style.pointerEvents='none');
+  $('qo'+i).classList.add('sel');
+  QS.answers.push({q:q.question,sel:i,ans:q.answer,opts:q.options});
+  $('qz-next').classList.remove('hidden');
+}
+function autoN(){
+  const c=DB.courses.find(x=>x.id===QS.cid),q=c.questions[QS.qOrder[QS.cur]];
+  QS.answers.push({q:q.question,sel:-1,ans:q.answer,opts:q.options});
+  nextQ();
+}
+function nextQ(){
+  const c=DB.courses.find(x=>x.id===QS.cid);
+  QS.cur++;
+  if(QS.cur>=c.questions.length)finishQ();else loadQ();
+}
+function finishQ(){
+  clearInterval(QS.ti);
+  const c=DB.courses.find(x=>x.id===QS.cid);
+  let sc=0;QS.answers.forEach(a=>{if(a.sel===a.ans)sc++;});
+  const tot=c.questions.length,pct=Math.round(sc/tot*100),passed=pct>=c.passPercent;
+  const k=CUR.user.id+'_'+c.id;
+  if(!DB.attempts[k])DB.attempts[k]=[];
+  DB.attempts[k].push({score:sc,total:tot,pct,passed,mode:QS.mode,date:new Date().toLocaleString()});
+  const atts=DB.attempts[k];
+  DB.results.push({uid:CUR.user.id,name:CUR.user.name,cid:c.id,cname:c.name,score:sc,total:tot,pct,passed,mode:QS.mode,attempt:atts.length,date:new Date().toLocaleString()});
+  sDB();
+  $('res-sc').textContent=sc;$('res-tot').textContent='/ '+tot;$('res-pct').textContent=pct+'%';
+  $('res-hd').textContent=passed?'Quiz Completed!':'Quiz Completed';
+  $('res-status').innerHTML=passed?'<span class="badge bd-pass" style="font-size:13px;padding:6px 16px;">PASSED</span>':'<span class="badge bd-fail" style="font-size:13px;padding:6px 16px;">FAILED</span>';
+  const rem=2-atts.length,bp=Math.max(...atts.map(a=>a.pct));
+  $('res-rem').textContent=rem>0?rem+' attempt(s) remaining · Best: '+bp+'%':'No attempts remaining · Final: '+bp+'%';
+  $('res-review').innerHTML=QS.answers.map((a,i)=>{
+    const ok=a.sel===a.ans,cls=a.sel===-1?'rev-skip':ok?'rev-ok':'rev-ng',icon=a.sel===-1?'Skipped':ok?'Correct':'Wrong';
+    return '<div class="rev-item '+cls+'"><b>'+icon+' Q'+(i+1)+'.</b> '+esc(a.q)+'<br><br><span>Your answer: <b>'+(a.sel>=0?LT[a.sel]+'. '+esc(a.opts[a.sel]):'Not answered')+'</b></span><br><span>Correct: <b style="color:var(--success)">'+LT[a.ans]+'. '+esc(a.opts[a.ans])+'</b></span></div>';
+  }).join('');
+  pushNotif('Kidza Quiz Complete','You scored '+pct+'% on '+c.name);
+  sendToMIT('QUIZ_COMPLETED'); // MIT App Inventor bridge event
+  if(passed)showCg(sc,tot,pct);else{NS.push('s-result');showScreen('s-result');}
+}
 
-  const q = (document.getElementById('piSearchInput')?.value||'').toLowerCase();
-  let items = APP.piItems;
-  if (q) items = items.filter(i => i.code.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
+// ═══════════════════════
+// CONGRATS
+// ═══════════════════════
+function showCg(sc,tot,pct){
+  $('cg-sc').textContent=sc;$('cg-tot').textContent='/ '+tot;
+  $('cg-msg').textContent='You scored '+pct+'% — keep it up!';
+  $('cg-em').textContent=pct>=90?'&#127942;':pct>=75?'&#127881;':'&#127775;';
+  $('cg-ttl').textContent=pct>=90?'Outstanding!':pct>=75?'Excellent Work!':'Well Done!';
+  const box=$('cg-box');
+  box.querySelectorAll('.confetti-p').forEach(p=>p.remove());
+  const cols=['#1a56db','#fbbf24','#34d399','#f472b6','#60a5fa','#e53935'];
+  for(let i=0;i<30;i++){const p=document.createElement('div');p.className='confetti-p';p.style.cssText='left:'+Math.random()*100+'%;background:'+cols[i%6]+';animation-delay:'+Math.random()*1.2+'s;animation-duration:'+(2.2+Math.random()*1.5)+'s;';box.appendChild(p);}
+  $('cg-ov').classList.remove('hidden');
+  NS.push('s-result');showScreen('s-result');
+}
+function closeCg(){$('cg-ov').classList.add('hidden');}
+function goHomeFromResult(){NS.length=0;NS.push('s-home');goHome();}
 
-  el.innerHTML = items.map((item, i) => `
-    <div class="pi-row">
-      <div class="pi-row-info">
-        <div class="pi-row-code">${escHtml(item.code)}</div>
-        <div class="pi-row-meta">${escHtml(item.dept)} · ${escHtml(item.cls)} · ${escHtml(item.brand)} · ₹${escHtml(item.mrp)}</div>
-      </div>
-      <input class="qty-input" type="number" value="${item.physQty}" min="0"
-        onchange="updatePIQty(${i},this.value)" title="Physical Qty">
-      <button class="del-btn" onclick="removePIItem(${i})">✕</button>
+// ═══════════════════════
+// LEADERBOARD
+// ═══════════════════════
+let lbTab='all';
+function goLb(){navTo('s-lb');renderLb();}
+function switchLbTab(tab){
+  lbTab=tab;
+  $('lb-cfilter').classList.toggle('hidden',tab!=='course');
+  document.querySelectorAll('#lb-tabs .tab-btn').forEach((b,i)=>b.classList.toggle('active',['all','course'][i]===tab));
+  if(tab==='course'){$('lb-csel').innerHTML='<option value="">All Courses</option>'+DB.courses.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');}
+  renderLb();
+}
+function renderLb(){
+  const fc=$('lb-csel')?$('lb-csel').value:'';
+  const scores={};
+  DB.users.filter(u=>u.role==='staff').forEach(u=>{
+    let best=null,ta=0;
+    DB.courses.forEach(c=>{
+      if(fc&&c.id!==fc)return;
+      (DB.attempts[u.id+'_'+c.id]||[]).forEach(a=>{ta++;if(!best||a.pct>best.pct)best={pct:a.pct,score:a.score,total:a.total,cname:c.name};});
+    });
+    scores[u.id]={name:u.name,uid:u.id,best,ta};
+  });
+  const sorted=Object.values(scores).sort((a,b)=>(b.best?.pct||0)-(a.best?.pct||0));
+  const rCls=(i)=>i===0?'r1':i===1?'r2':i===2?'r3':'rN';
+  const rIcon=(i)=>i===0?'&#129351;':i===1?'&#129352;':i===2?'&#129353;':'#'+(i+1);
+  $('lb-list').innerHTML=sorted.map((r,i)=>`
+    <div class="lb-item${r.uid===CUR.user.id?' lb-me':''}">
+      <div class="lb-rank ${rCls(i)}">${rIcon(i)}</div>
+      <div style="flex:1;"><div class="lb-name">${esc(r.name)}${r.uid===CUR.user.id?' (You)':''}</div>
+        <div class="lb-sub">${r.best?r.best.score+'/'+r.best.total+' &middot; '+r.best.cname:'No attempts yet'}</div></div>
+      <div class="lb-pct">${r.best?r.best.pct+'%':'&mdash;'}</div>
     </div>`).join('');
 }
 
-function searchPIItems() {
-  const bar = document.getElementById('piSearchBar');
-  bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
-  if (bar.style.display === 'block') document.getElementById('piSearchInput').focus();
+// ═══════════════════════
+// ADMIN
+// ═══════════════════════
+function renderAdmin(){
+  $('adm-sub').textContent='Logged in as '+CUR.user.name;
+  admTab('ov');
+}
+function admTab(t){
+  ['ov','co','us','re'].forEach(x=>$('adm-'+x).classList.toggle('hidden',x!==t));
+  document.querySelectorAll('#adm-tabs .tab-btn').forEach((b,i)=>b.classList.toggle('active',['ov','co','us','re'][i]===t));
+  if(t==='ov')renderAdmOv();
+  if(t==='co')renderAdmCo();
+  if(t==='us')renderAdmUs();
+  if(t==='re')renderAdmRe();
 }
 
-function updatePIQty(i, val) {
-  APP.piItems[i].physQty = parseInt(val)||0;
-  autoSavePI();
+const CHS={};
+function mkC(id,type,data,opts){if(CHS[id])CHS[id].destroy();CHS[id]=new Chart($(id).getContext('2d'),{type,data,options:opts});}
+
+function renderAdmOv(){
+  const allA=Object.values(DB.attempts).flat();
+  const passed=allA.filter(a=>a.passed).length;
+  const avg=allA.length?Math.round(allA.reduce((s,a)=>s+a.pct,0)/allA.length):0;
+  $('adm-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${DB.users.filter(u=>u.role==='staff').length}</div><div class="stat-lbl">Staff</div></div>
+    <div class="stat-card"><div class="stat-num">${DB.courses.length}</div><div class="stat-lbl">Courses</div></div>
+    <div class="stat-card"><div class="stat-num">${allA.length}</div><div class="stat-lbl">Attempts</div></div>
+    <div class="stat-card"><div class="stat-num">${avg}%</div><div class="stat-lbl">Avg Score</div></div>`;
+  const bk=[0,0,0,0,0];allA.forEach(a=>bk[Math.min(4,Math.floor(a.pct/20))]++);
+  mkC('ch-sc','bar',{labels:['0-20%','21-40%','41-60%','61-80%','81-100%'],datasets:[{label:'Attempts',data:bk,backgroundColor:['#dc2626','#f97316','#eab308','#22c55e','#16a34a'],borderRadius:8,borderSkipped:false}]},{plugins:{legend:{display:false}},scales:{y:{ticks:{stepSize:1},grid:{color:'#f1f5f9'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false});
+  mkC('ch-pf','doughnut',{labels:['Passed','Failed'],datasets:[{data:[passed,allA.length-passed],backgroundColor:['#16a34a','#dc2626'],borderWidth:0}]},{plugins:{legend:{position:'bottom'}},responsive:true,maintainAspectRatio:false,cutout:'62%'});
+  const cl=DB.courses.map(c=>c.name.length>16?c.name.slice(0,16)+'...':c.name);
+  const cd=DB.courses.map(c=>{const n=(c.assignedUsers||[]).length;if(!n)return 0;const d=(c.assignedUsers||[]).filter(u=>allMatsDone(u,c.id)).length;return Math.round(d/n*100);});
+  mkC('ch-cp','bar',{labels:cl,datasets:[{label:'%',data:cd,backgroundColor:'#1a56db',borderRadius:8,borderSkipped:false}]},{plugins:{legend:{display:false}},scales:{y:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f1f5f9'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false});
 }
 
-function removePIItem(i) {
-  APP.piItems.splice(i, 1);
-  renderPIItems();
-  autoSavePI();
+function renderAdmCo(){
+  $('adm-co-list').innerHTML=DB.courses.map(c=>`
+    <div class="item-row" style="cursor:default;flex-wrap:wrap;gap:8px;">
+      <div class="item-icon ic-course">&#128218;</div>
+      <div class="item-info"><div class="item-title">${esc(c.name)}</div><div class="item-sub">${c.questions.length} Q &middot; ${(c.materials||[]).length} Mat &middot; ${(c.assignedUsers||[]).length} Users</div></div>
+      <div class="row"><button class="btn btn-outline btn-xs" onclick="openCModal('${c.id}')">Edit</button><button class="btn btn-danger btn-xs" onclick="delCourse('${c.id}')">Del</button></div>
+    </div>`).join('')||'<p class="muted">No courses yet.</p>';
 }
 
-function clearPIList() {
-  if (!confirm('Clear all counted items? This cannot be undone.')) return;
-  APP.piItems = [];
-  renderPIItems();
-  if (APP.user) db.ref(`pi_drafts/${APP.user.uid}`).remove();
-  CACHE.del('piDraft');
+function renderAdmUs(){
+  // Show ALL users including admins, full list
+  $('adm-us-list').innerHTML=DB.users.map(u=>`
+    <div class="item-row" style="cursor:default;">
+      <div class="av">${u.name[0].toUpperCase()}</div>
+      <div class="item-info"><div class="item-title">${esc(u.name)}</div><div class="item-sub">@${esc(u.username)} &middot; ${u.role}</div></div>
+      <div class="row"><button class="btn btn-outline btn-xs" onclick="openUModal('${u.id}')">Edit</button>${u.id!=='u0'?'<button class="btn btn-danger btn-xs" onclick="delUser(\''+u.id+'\')">Del</button>':''}</div>
+    </div>`).join('');
 }
 
-async function submitPI() {
-  if (!APP.piItems.length) return;
-  if (!confirm('Submit Physical Inventory? After submission you cannot add more items.')) return;
-
-  showLoading('Generating variance report...');
-  const store = APP.profile.store;
-  const week  = APP.piWeek;
-  const ts    = new Date().toISOString();
-
-  // Build variance result
-  const result = APP.piItems.map(item => {
-    const sysQty  = item.soh || 0;
-    const physQty = item.physQty;
-    const variance = physQty - sysQty;
-    const mrp     = parseFloat(item.mrp) || 0;
-    const varValue = variance * mrp;
-    return { code: item.code, dept: item.dept, cls: item.cls, brand: item.brand,
-      mrp: item.mrp, sysQty, physQty, variance, varValue };
+function renderAdmRe(){
+  const sel=$('adm-fc').value;
+  $('adm-fc').innerHTML='<option value="">All Courses</option>'+DB.courses.map(c=>'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+'</option>').join('');
+  $('adm-fc').value=sel;
+  const rows=DB.results.filter(r=>!sel||r.cid===sel);
+  $('adm-re-body').innerHTML=rows.map((r,i)=>`<tr>
+    <td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.cname)}</td>
+    <td>${r.score}/${r.total} (${r.pct}%)</td>
+    <td><span class="badge bd-blue">${r.mode==='speed'?'Speed':'Know.'}</span></td>
+    <td><span class="badge ${r.passed?'bd-pass':'bd-fail'}">${r.passed?'PASS':'FAIL'}</span></td>
+    <td><button class="btn btn-warn btn-xs" onclick="reassign('${r.uid}','${r.cid}')">Reset</button></td>
+  </tr>`).join('')||'<tr><td colspan="7" class="muted ctr">No results.</td></tr>';
+  // Leaderboard in admin
+  const sc={};
+  DB.users.filter(u=>u.role==='staff').forEach(u=>{
+    let best=null;
+    DB.courses.forEach(c=>{(DB.attempts[u.id+'_'+c.id]||[]).forEach(a=>{if(!best||a.pct>best.pct)best={pct:a.pct,score:a.score,total:a.total};});});
+    sc[u.id]={name:u.name,best};
   });
+  const sorted=Object.values(sc).sort((a,b)=>(b.best?.pct||0)-(a.best?.pct||0));
+  const rC=(i)=>i===0?'r1':i===1?'r2':i===2?'r3':'rN';
+  const rI=(i)=>i===0?'1st':i===1?'2nd':i===2?'3rd':(i+1)+'th';
+  $('adm-lb').innerHTML=sorted.map((r,i)=>`
+    <div class="lb-item"><div class="lb-rank ${rC(i)}">${rI(i)}</div>
+      <div style="flex:1;"><div class="lb-name">${esc(r.name)}</div></div>
+      <div class="lb-pct">${r.best?r.best.pct+'%':'&mdash;'}</div></div>`).join('');
+}
 
-  const totalVar   = result.filter(r => r.variance !== 0).length;
-  const positiveVar = result.filter(r => r.variance > 0).length;
-  const negativeVar = result.filter(r => r.variance < 0).length;
-  const totalVarValue = result.reduce((s,r) => s + r.varValue, 0);
-  const varPct = result.length ? ((totalVar / result.length)*100).toFixed(1) : '0';
+function reassign(uid,cid){
+  if(!confirm('Reset all attempts for this user on this course?'))return;
+  delete DB.attempts[uid+'_'+cid];
+  const c=DB.courses.find(x=>x.id===cid);
+  if(c&&c.materials)c.materials.forEach(m=>delete DB.matProg[uid+'_'+cid+'_'+m.id]);
+  DB.results=DB.results.filter(r=>!(r.uid===uid&&r.cid===cid));
+  sDB();alert('Reset done. User can attempt again.');renderAdmRe();
+}
+function exportCSV(){
+  if(!DB.results.length){alert('No results.');return;}
+  let csv='Name,Course,Score,Total,Pct,Mode,Status,Attempt,Date\n';
+  DB.results.forEach(r=>{csv+=r.name+','+r.cname+','+r.score+','+r.total+','+r.pct+'%,'+r.mode+','+(r.passed?'PASS':'FAIL')+','+r.attempt+','+r.date+'\n';});
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='kidza_results.csv';a.click();
+}
 
-  const id = `${store}_${week}_${Date.now()}`;
-  const submission = {
-    id, store, week, ts,
-    items: APP.piItems,
-    result,
-    summary: { total: result.length, matched: result.length-totalVar, totalVar, positiveVar, negativeVar, totalVarValue, varPct },
-    status: 'submitted',
-    recountStatus: 'none',
-    submittedBy: APP.profile?.name || APP.user?.email
-  };
-
-  APP.currentPIResult = submission;
-
-  try {
-    await db.ref(`pi_history/${id}`).set(submission);
-    // Delete draft
-    await db.ref(`pi_drafts/${APP.user.uid}`).remove();
-    CACHE.del('piDraft');
-    APP.piItems = [];
-    renderPIItems();
-    hideLoading();
-    showPIResult(submission);
-    checkRecountStatus();
-    renderHistory();
-    renderDashboard();
-    showToast('✅ Physical Inventory submitted!', 'success');
-  } catch(e) {
-    hideLoading();
-    showToast('Submit failed: '+e.message, 'error');
+// ═══════════════════════
+// COURSE MODAL
+// ═══════════════════════
+let ECO=null,TM=[],TQ=[];
+function openCModal(cid){
+  ECO=cid;
+  if(cid){
+    const c=DB.courses.find(x=>x.id===cid);
+    $('m-co-ttl').textContent='Edit Course';
+    $('mc-n').value=c.name;$('mc-d').value=c.desc||'';
+    $('mc-p').value=c.passPercent||60;$('mc-tk').value=c.timerK||30;$('mc-ts').value=c.timerS||10;
+    TM=JSON.parse(JSON.stringify(c.materials||[]));TQ=JSON.parse(JSON.stringify(c.questions||[]));
+    renderAsgn(c.assignedUsers||[]);
+  }else{
+    $('m-co-ttl').textContent='New Course';
+    $('mc-n').value='';$('mc-d').value='';$('mc-p').value=60;$('mc-tk').value=30;$('mc-ts').value=10;
+    TM=[];TQ=[];renderAsgn([]);
   }
+  renderMats();renderQs();openM('m-co');
 }
-
-function showPIResult(sub) {
-  const s = sub.summary;
-  const varRows = sub.result.filter(r => r.variance !== 0);
-  const html = `
-    <div class="stat-grid" style="margin-bottom:14px">
-      <div class="stat-card accent" style="padding:12px"><div class="stat-val" style="font-size:20px">${s.total}</div><div class="stat-lbl">Total Items</div></div>
-      <div class="stat-card success" style="padding:12px"><div class="stat-val" style="font-size:20px">${s.matched}</div><div class="stat-lbl">✅ Matched</div></div>
-      <div class="stat-card danger" style="padding:12px"><div class="stat-val" style="font-size:20px">${s.totalVar}</div><div class="stat-lbl">⚠️ Variance</div></div>
-      <div class="stat-card" style="padding:12px"><div class="stat-val" style="font-size:20px;color:var(--success)">+${s.positiveVar}</div><div class="stat-lbl">Positive</div></div>
-      <div class="stat-card" style="padding:12px"><div class="stat-val" style="font-size:20px;color:var(--danger)">${s.negativeVar}</div><div class="stat-lbl">Negative</div></div>
-      <div class="stat-card warning" style="padding:12px"><div class="stat-val" style="font-size:16px">₹${Math.abs(s.totalVarValue).toFixed(0)}</div><div class="stat-lbl">Var Value</div></div>
-    </div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Variance: <b>${s.varPct}%</b> · Submitted: ${fmtDate(sub.ts)}</div>
-    ${varRows.length ? `
-    <div class="card-title">⚠️ Items with Variance</div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>MRP</th><th>Sys</th><th>Phys</th><th>Var</th><th>Var₹</th></tr></thead>
-      <tbody>${varRows.map(r=>`<tr>
-        <td class="td-code">${escHtml(r.code)}</td>
-        <td>${escHtml(r.dept)}</td><td>${escHtml(r.cls)}</td><td>${escHtml(r.brand)}</td>
-        <td>₹${escHtml(r.mrp)}</td><td>${r.sysQty}</td><td>${r.physQty}</td>
-        <td class="${r.variance>0?'var-pos':r.variance<0?'var-neg':'var-zero'}">${r.variance>0?'+':''}${r.variance}</td>
-        <td class="${r.varValue>0?'var-pos':r.varValue<0?'var-neg':'var-zero'}">₹${r.varValue.toFixed(0)}</td>
-      </tr>`).join('')}</tbody>
-    </table></div>` : '<div class="info-box green">✅ All items match system stock — no variance!</div>'}`;
-  document.getElementById('piResultContent').innerHTML = html;
-  openModal('piResultModal');
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  RECOUNT
-// ═══════════════════════════════════════════════════════════════
-async function checkRecountStatus() {
-  const store = APP.profile?.store;
-  if (!store) return;
-  const sec = document.getElementById('recountSection');
-
-  try {
-    const snap = await db.ref('pi_history').orderByChild('store').equalTo(store).limitToLast(5).get();
-    const val = snap.val();
-    if (!val) { sec.style.display = 'none'; return; }
-    const records = Object.values(val).filter(h => h.week === APP.piWeek);
-    if (!records.length) { sec.style.display = 'none'; return; }
-    const latest = records.sort((a,b) => b.ts.localeCompare(a.ts))[0];
-    renderRecountSection(latest);
-    sec.style.display = 'block';
-  } catch(e) { sec.style.display = 'none'; }
-}
-
-function renderRecountSection(pi) {
-  const el = document.getElementById('recountContent');
-  const s  = pi.recountStatus || 'none';
-
-  let html = '';
-  if (s === 'none') {
-    html = `
-      <div class="info-box blue" style="margin-bottom:10px;">First recount available once after submission. Photos are mandatory and stored for admin review.</div>
-      <button class="btn btn-warning btn-full" onclick="startRecount(1,'${pi.id}')">📷 Start Recount 1</button>`;
-  } else if (s === 'r1_done') {
-    html = `
-      <span class="chip chip-green">✅ Recount 1 Submitted</span>
-      <div style="margin-top:8px;font-size:12px;color:var(--text2);">Awaiting admin approval for Recount 2.</div>`;
-  } else if (s === 'r2_approved') {
-    html = `
-      <span class="chip chip-green">✅ Recount 1 Done</span>
-      <div class="info-box blue" style="margin:10px 0;">Admin has approved Recount 2. Same process — scan products and capture photos.</div>
-      <button class="btn btn-primary btn-full" onclick="startRecount(2,'${pi.id}')">📷 Start Recount 2</button>`;
-  } else if (s === 'r2_done') {
-    html = `<span class="chip chip-purple">✅ Both Recounts Completed</span>`;
-  }
-  el.innerHTML = html;
-}
-
-let recountData = { piId: null, num: 0, items: {} };
-
-function startRecount(num, piId) {
-  recountData = { piId, num, items: {} };
-  const modal = `
-    <div class="modal-overlay open" id="recountModal">
-      <div class="modal">
-        <h3>🔄 Recount ${num}</h3>
-        <div class="info-box yellow" style="margin-bottom:12px;">For each product: scan code, enter qty, capture photo.</div>
-        <div class="scan-box" style="padding:12px">
-          <input class="scan-input" id="rc_code" placeholder="PRODUCT CODE" style="margin-bottom:8px;font-size:15px;">
-          <input type="number" id="rc_qty" placeholder="Qty" min="0"
-            style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:9px 12px;font-size:15px;margin-bottom:8px;color:var(--text);outline:none;">
-          <input type="file" id="rc_photo" accept="image/*" capture="environment" style="display:none" onchange="handleRecountPhoto()">
-          <button class="btn btn-secondary btn-full btn-sm" onclick="document.getElementById('rc_photo').click()">📷 Capture Photo</button>
-        </div>
-        <div id="rc_preview" style="margin-top:8px;"></div>
-        <div id="rc_captured_list" style="margin-top:10px;max-height:200px;overflow-y:auto;"></div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="document.getElementById('recountModal').remove()">Cancel</button>
-          <button class="btn btn-success" onclick="submitRecount()">✅ Submit Recount ${num}</button>
-        </div>
+function addMat(){TM.push({id:nuid(),type:'video',title:'',url:''});renderMats();}
+function renderMats(){
+  $('mc-mats').innerHTML=TM.map((m,i)=>`
+    <div class="qb"><div class="qb-h"><b style="font-size:12px;">Mat ${i+1}</b><button class="btn btn-danger btn-xs" onclick="TM.splice(${i},1);renderMats()">Remove</button></div>
+      <div class="row mb1">
+        <select onchange="TM[${i}].type=this.value" style="flex:0 0 90px;font-size:13px;padding:8px;">
+          ${['video','ppt','pdf','gif','image'].map(t=>'<option value="'+t+'"'+(m.type===t?' selected':'')+'>'+t.toUpperCase()+'</option>').join('')}
+        </select>
+        <input placeholder="Title" value="${esc(m.title)}" oninput="TM[${i}].title=this.value" style="flex:1;">
       </div>
+      <input placeholder="URL (YouTube, PPT, PDF, image link...)" value="${esc(m.url||'')}" oninput="TM[${i}].url=this.value">
+    </div>`).join('')||'<p class="muted" style="font-size:13px;margin-bottom:8px;">No materials.</p>';
+}
+function addQ(){TQ.push({id:nuid(),question:'',options:['','','',''],answer:0});renderQs();}
+function renderQs(){
+  $('mc-qs').innerHTML=TQ.map((q,qi)=>`
+    <div class="qb"><div class="qb-h"><b style="font-size:12px;">Q${qi+1}</b><button class="btn btn-danger btn-xs" onclick="TQ.splice(${qi},1);renderQs()">Remove</button></div>
+      <input placeholder="Question text" value="${esc(q.question)}" oninput="TQ[${qi}].question=this.value" style="margin-bottom:10px;">
+      ${q.options.map((o,oi)=>'<div class="opt-row"><input type="radio" name="ca'+qi+'" '+(q.answer===oi?'checked':'')+' onchange="TQ['+qi+'].answer='+oi+'" title="Mark correct"><div class="opt-letter" style="flex-shrink:0;background:#f1f5f9;color:var(--mid);">'+LT[oi]+'</div><input type="text" placeholder="Option '+LT[oi]+'" value="'+esc(o)+'" oninput="TQ['+qi+'].options['+oi+']=this.value"></div>').join('')}
+      <p style="font-size:11px;color:var(--muted);margin-top:4px;">Radio = correct answer</p>
+    </div>`).join('')||'<p class="muted" style="font-size:13px;margin-bottom:8px;">No questions.</p>';
+}
+function renderAsgn(cur){
+  // Always re-read DB.users for freshest list
+  const staff=DB.users.filter(u=>u.role==='staff');
+  $('mc-asgn').innerHTML=staff.map(u=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;cursor:pointer;background:#f8fafc;border:1px solid var(--border);margin-bottom:6px;">
+      <input type="checkbox" id="asg-${u.id}" ${cur.includes(u.id)?'checked':''} style="width:18px;height:18px;accent-color:var(--blue);">
+      <div class="av" style="width:30px;height:30px;font-size:12px;">${u.name[0]}</div>
+      <span style="font-size:14px;font-weight:600;">${esc(u.name)}</span>
+      <span class="muted" style="font-size:12px;">@${esc(u.username)}</span>
+    </label>`).join('')||'<p class="muted" style="font-size:13px;">No staff users yet. Add users first.</p>';
+}
+function saveCourse(){
+  const name=$('mc-n').value.trim();
+  if(!name){alert('Course name required.');return;}
+  if(!TQ.length){alert('Add at least one question.');return;}
+  for(const q of TQ){if(!q.question.trim()||q.options.some(o=>!o.trim())){alert('Fill all question fields.');return;}}
+  const asgnd=DB.users.filter(u=>u.role==='staff'&&$('asg-'+u.id)?.checked).map(u=>u.id);
+  const co={id:ECO||nuid(),name,desc:$('mc-d').value.trim(),passPercent:parseInt($('mc-p').value)||60,timerK:parseInt($('mc-tk').value)||30,timerS:parseInt($('mc-ts').value)||10,assignedUsers:asgnd,materials:TM,questions:TQ};
+  if(ECO){const i=DB.courses.findIndex(c=>c.id===ECO);DB.courses[i]=co;}else DB.courses.push(co);
+  sDB();closeM('m-co');renderAdmCo();
+  asgnd.forEach(uid=>{const u=DB.users.find(x=>x.id===uid);if(u)pushNotif('New Quiz Assigned','You have a new quiz: '+name);});
+  alert('Course saved!');
+}
+function delCourse(cid){
+  if(!confirm('Delete this course and all results?'))return;
+  DB.courses=DB.courses.filter(c=>c.id!==cid);DB.results=DB.results.filter(r=>r.cid!==cid);
+  Object.keys(DB.attempts).forEach(k=>{if(k.split('_')[1]===cid)delete DB.attempts[k];});
+  sDB();renderAdmCo();
+}
+
+// ═══════════════════════
+// USER MODAL
+// ═══════════════════════
+let EUO=null;
+function openUModal(id){
+  EUO=id;
+  if(id){const u=DB.users.find(x=>x.id===id);$('m-us-ttl').textContent='Edit User';$('mu-n').value=u.name;$('mu-u').value=u.username;$('mu-p').value=u.password;$('mu-r').value=u.role;}
+  else{$('m-us-ttl').textContent='New User';$('mu-n').value='';$('mu-u').value='';$('mu-p').value='';$('mu-r').value='staff';}
+  $('mu-err').classList.add('hidden');openM('m-us');
+}
+function saveUser(){
+  const name=$('mu-n').value.trim();
+  const uname=$('mu-u').value.trim().toLowerCase().replace(/\s+/g,'');
+  const pass=$('mu-p').value;
+  const role=$('mu-r').value;
+  if(!name||!uname||!pass){showUE('All fields required.');return;}
+  if(DB.users.find(u=>u.username.toLowerCase()===uname&&u.id!==EUO)){showUE('Username already taken.');return;}
+  if(EUO){const i=DB.users.findIndex(u=>u.id===EUO);DB.users[i]={...DB.users[i],name,username:uname,password:pass,role};}
+  else DB.users.push({id:nuid(),name,username:uname,password:pass,role});
+  sDB();closeM('m-us');renderAdmUs();
+  alert('User saved! They can now log in with username: '+uname);
+}
+function showUE(m){$('mu-err').textContent=m;$('mu-err').classList.remove('hidden');}
+function delUser(id){
+  if(!confirm('Delete this user?'))return;
+  DB.users=DB.users.filter(u=>u.id!==id);sDB();renderAdmUs();
+}
+
+// ═══════════════════════
+// KEYBOARD
+// ═══════════════════════
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('s-login').classList.contains('active'))doLogin();});
+
+// ═══════════════════════
+// INIT
+// ═══════════════════════
+(async function init(){
+  // Initialise Firebase
+  const firebaseOK = initFirebase();
+
+  // Show splash while loading
+  const splash = document.createElement('div');
+  splash.id = 'sync-splash';
+  splash.innerHTML = `
+    <div style="font-family:'Sora',sans-serif;font-size:30px;font-weight:800;color:#fff;letter-spacing:1px;margin-bottom:8px;">KIDZA</div>
+    <div style="color:rgba(255,255,255,.75);font-size:13px;margin-bottom:20px;">${firebaseOK ? 'Syncing across devices…' : 'Loading…'}</div>
+    <div style="width:60px;height:4px;border-radius:50px;background:rgba(255,255,255,.3);overflow:hidden;">
+      <div style="height:100%;background:#fff;border-radius:50px;animation:syncbar 1.1s ease-in-out infinite;"></div>
     </div>`;
-  document.body.insertAdjacentHTML('beforeend', modal);
-}
+  splash.style.cssText = 'position:fixed;inset:0;background:#1a56db;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
+  document.body.appendChild(splash);
+  const style = document.createElement('style');
+  style.textContent = '@keyframes syncbar{0%{width:0%;margin-left:0}50%{width:100%;margin-left:0}100%{width:0%;margin-left:100%}}';
+  document.head.appendChild(style);
 
-function handleRecountPhoto() {
-  const code = document.getElementById('rc_code').value.trim().toUpperCase();
-  const qty  = parseInt(document.getElementById('rc_qty').value);
-  if (!code) { showToast('Enter product code first', 'error'); return; }
-  if (isNaN(qty)) { showToast('Enter quantity', 'error'); return; }
-  const file = document.getElementById('rc_photo').files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    recountData.items[code] = { code, qty, photo: e.target.result, ts: new Date().toISOString() };
-    updateRecountList();
-    document.getElementById('rc_code').value = '';
-    document.getElementById('rc_qty').value = '';
-    showToast(`✅ ${code} captured`, 'success');
-  };
-  reader.readAsDataURL(file);
-}
+  await lDB();
+  splash.remove();
 
-function updateRecountList() {
-  const el = document.getElementById('rc_captured_list');
-  const items = Object.values(recountData.items);
-  if (!items.length) return;
-  el.innerHTML = `<div class="card-title" style="margin-bottom:6px">${items.length} captured</div>` +
-    items.map(item=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--surface2);border-radius:6px;margin-bottom:4px;">
-        <img src="${item.photo}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0">
-        <div><b>${escHtml(item.code)}</b> · Qty: ${item.qty}</div>
-        <button class="btn btn-xs btn-danger" onclick="delete recountData.items['${item.code}'];updateRecountList()">✕</button>
-      </div>`).join('');
-}
-
-async function submitRecount() {
-  const items = Object.values(recountData.items);
-  if (!items.length) { showToast('Capture at least one product photo', 'error'); return; }
-
-  showLoading('Uploading recount photos...');
-  const uploads = {};
-  for (const item of items) {
-    try {
-      const resp = await fetch(item.photo);
-      const blob = await resp.blob();
-      const path = `recountPhotos/${recountData.piId}/${recountData.num}/${item.code}_${Date.now()}.jpg`;
-      const ref = stor.ref(path);
-      await ref.put(blob);
-      const url = await ref.getDownloadURL();
-      uploads[item.code] = { code: item.code, qty: item.qty, photoURL: url, ts: item.ts };
-    } catch(e) {
-      // Fallback: store base64 in DB if Storage fails
-      uploads[item.code] = { code: item.code, qty: item.qty, photoBase64: item.photo, ts: item.ts };
-    }
+  // Set up realtime sync status badge + listener (added)
+  if(firebaseOK){
+    setSyncStatus(navigator.onLine===false?'offline':'online', navigator.onLine===false?'Offline':'Online');
+    listenForChanges();
+  }else{
+    setSyncStatus('offline','Offline');
   }
 
-  const statusKey = recountData.num === 1 ? 'r1' : 'r2';
-  const statusVal = recountData.num === 1 ? 'r1_done' : 'r2_done';
-  const update = {
-    recountStatus: statusVal,
-    [`${statusKey}Data`]: uploads,
-    [`${statusKey}SubmittedAt`]: new Date().toISOString(),
-    [`${statusKey}By`]: APP.profile?.name
-  };
-
-  try {
-    await db.ref(`pi_history/${recountData.piId}`).update(update);
-    hideLoading();
-    showToast(`✅ Recount ${recountData.num} submitted`, 'success');
-    document.getElementById('recountModal')?.remove();
-    checkRecountStatus();
-  } catch(e) {
-    hideLoading();
-    showToast('Submit failed: '+e.message, 'error');
+  // Show Firebase setup banner if not yet configured
+  if(!FIREBASE_CONFIGURED){
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#92400e;color:#fff;font-size:12px;padding:10px 14px;z-index:8000;text-align:center;line-height:1.5;';
+    banner.innerHTML = "⚠️ <b>Offline mode</b> — data is device-only. <a href='#' onclick='this.parentElement.style.display=\"none\"' style='color:#fcd34d;text-decoration:underline;'>Dismiss</a>";
+    document.body.appendChild(banner);
   }
-}
 
-// ═══════════════════════════════════════════════════════════════
-//  HISTORY
-// ═══════════════════════════════════════════════════════════════
-async function renderHistory() {
-  const el = document.getElementById('historyList');
-  el.innerHTML = '<div style="text-align:center;padding:20px;"><div class="spinner"></div></div>';
-
-  try {
-    let query = db.ref('pi_history').orderByChild('ts');
-    const snap = await query.limitToLast(200).get();
-    const val  = snap.val();
-    if (!val) { el.innerHTML = '<div class="empty"><div class="empty-icon">📂</div><h3>No History</h3><p>Submitted PI records will appear here</p></div>'; return; }
-
-    let records = Object.values(val).sort((a,b) => b.ts.localeCompare(a.ts));
-
-    // Filter by role
-    if (APP.profile?.role !== 'admin') {
-      records = records.filter(r => r.store === APP.profile?.store);
-    }
-
-    // Filter by store select
-    const storeFilter = document.getElementById('histFilterStore')?.value || 'ALL';
-    if (storeFilter !== 'ALL') records = records.filter(r => r.store === storeFilter);
-
-    // Filter by period
-    const period = document.getElementById('histFilterPeriod')?.value || 'all';
-    const crEl = document.getElementById('histCustomRange');
-    crEl.style.display = period === 'custom' ? 'grid' : 'none';
-    if (period === 'week') {
-      const w = getWeekString();
-      records = records.filter(r => r.week === w);
-    } else if (period === 'month') {
-      const m = getMonthString();
-      records = records.filter(r => r.ts && r.ts.startsWith(m));
-    } else if (period === 'custom') {
-      const from = document.getElementById('histDateFrom').value;
-      const to   = document.getElementById('histDateTo').value;
-      if (from) records = records.filter(r => r.ts >= from);
-      if (to)   records = records.filter(r => r.ts <= to+'T23:59:59');
-    }
-
-    if (!records.length) {
-      el.innerHTML = '<div class="empty"><div class="empty-icon">📂</div><h3>No Records</h3><p>No PI records match this filter</p></div>';
-      return;
-    }
-
-    el.innerHTML = records.map(h => {
-      const s = h.summary || {};
-      const statusMap = { none:'submitted', r1_done:'R1 Done', r2_approved:'R2 Approved', r2_done:'R2 Done' };
-      const statusChip = { none:'chip-green', r1_done:'chip-yellow', r2_approved:'chip-blue', r2_done:'chip-purple' };
-      const rc = h.recountStatus || 'none';
-      return `<div class="list-item" onclick="showHistoryDetail('${h.id}')">
-        <div class="list-item-row">
-          <div>
-            <div class="list-item-main">${escHtml(h.store)} — ${escHtml(h.week)}</div>
-            <div class="list-item-sub">${s.total||0} items · <span style="color:var(--danger)">${s.totalVar||0} variance</span> · ${s.varPct||0}%</div>
-          </div>
-          <span class="chip ${statusChip[rc]||'chip-gray'}">${statusMap[rc]||rc}</span>
-        </div>
-        <div style="font-size:11px;color:var(--text2);margin-top:4px;">${fmtDate(h.ts)} · by ${escHtml(h.submittedBy||'—')}</div>
-      </div>`;
-    }).join('');
-
-    // Update History PI Number (sequential)
-    el.innerHTML = records.map((h,idx) => {
-      const s = h.summary || {};
-      const rc = h.recountStatus || 'none';
-      const statusMap = { none:'Submitted', r1_done:'R1 Done', r2_approved:'R2 Approved', r2_done:'R2 Done' };
-      const statusChip = { none:'chip-green', r1_done:'chip-yellow', r2_approved:'chip-blue', r2_done:'chip-purple' };
-      return `<div class="list-item" onclick="showHistoryDetail('${h.id}')">
-        <div class="list-item-row">
-          <div>
-            <div class="list-item-main">#${records.length-idx} · ${escHtml(h.store)} — ${escHtml(h.week)}</div>
-            <div class="list-item-sub">${s.total||0} items · <span style="color:var(--danger)">${s.totalVar||0} variance</span> · ${s.varPct||0}%</div>
-          </div>
-          <span class="chip ${statusChip[rc]||'chip-gray'}">${statusMap[rc]||rc}</span>
-        </div>
-        <div style="font-size:11px;color:var(--text2);margin-top:4px;">📅 ${fmtDate(h.ts)} · by ${escHtml(h.submittedBy||'—')}</div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    el.innerHTML = `<div class="info-box red">Error loading history: ${e.message}</div>`;
-  }
-}
-
-async function showHistoryDetail(id) {
-  try {
-    const snap = await db.ref(`pi_history/${id}`).get();
-    const h = snap.val();
-    if (!h) return;
-    APP.histItem = h;
-    const s = h.summary || {};
-    const isAdmin = APP.profile?.role === 'admin';
-    const varRows = (h.result||[]).filter(r => r.variance !== 0);
-
-    let html = `
-      <div class="info-box blue" style="margin-bottom:12px;">
-        <b>${escHtml(h.store)}</b> · ${escHtml(h.week)} · ${s.total||0} items · ${s.varPct||0}% variance
-      </div>
-      <div class="stat-grid" style="margin-bottom:12px">
-        <div class="stat-card success" style="padding:10px"><div class="stat-val" style="font-size:18px">${s.matched||0}</div><div class="stat-lbl">Matched</div></div>
-        <div class="stat-card danger" style="padding:10px"><div class="stat-val" style="font-size:18px">${s.totalVar||0}</div><div class="stat-lbl">Variance</div></div>
-        <div class="stat-card warning" style="padding:10px"><div class="stat-val" style="font-size:14px">₹${Math.abs(s.totalVarValue||0).toFixed(0)}</div><div class="stat-lbl">Var Value</div></div>
-      </div>`;
-
-    if (varRows.length) {
-      html += `<div class="tbl-wrap"><table>
-        <thead><tr><th>Code</th><th>Dept</th><th>Class</th><th>Brand</th><th>MRP</th><th>Sys</th><th>Phys</th><th>Var</th><th>Var₹</th></tr></thead>
-        <tbody>${varRows.map(r=>`<tr>
-          <td class="td-code">${escHtml(r.code)}</td>
-          <td>${escHtml(r.dept)}</td><td>${escHtml(r.cls)}</td><td>${escHtml(r.brand)}</td>
-          <td>₹${escHtml(r.mrp)}</td><td>${r.sysQty}</td><td>${r.physQty}</td>
-          <td class="${r.variance>0?'var-pos':r.variance<0?'var-neg':'var-zero'}">${r.variance>0?'+':''}${r.variance}</td>
-          <td class="${r.varValue>0?'var-pos':r.varValue<0?'var-neg':'var-zero'}">₹${(r.varValue||0).toFixed(0)}</td>
-        </tr>`).join('')}</tbody>
-      </table></div>`;
-    } else {
-      html += '<div class="info-box green">✅ No variance items</div>';
-    }
-
-    // Recount photos
-    if (h.r1Data) {
-      html += `<hr class="divider"><div class="card-title">📷 Recount 1 Photos</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-bottom:8px">
-          ${Object.values(h.r1Data).map(item=>`
-            <div style="text-align:center">
-              <img src="${item.photoURL||item.photoBase64||''}" style="width:100%;height:70px;object-fit:cover;border-radius:6px;cursor:pointer"
-                onclick="viewPhoto('${item.photoURL||item.photoBase64||''}','${escHtml(item.code)}')">
-              <div style="font-size:10px;margin-top:2px;">${escHtml(item.code)}</div>
-              <div style="font-size:10px;color:var(--text2)">Qty: ${item.qty}</div>
-            </div>`).join('')}
-        </div>`;
-    }
-    if (h.r2Data) {
-      html += `<hr class="divider"><div class="card-title">📷 Recount 2 Photos</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-bottom:8px">
-          ${Object.values(h.r2Data).map(item=>`
-            <div style="text-align:center">
-              <img src="${item.photoURL||item.photoBase64||''}" style="width:100%;height:70px;object-fit:cover;border-radius:6px;cursor:pointer"
-                onclick="viewPhoto('${item.photoURL||item.photoBase64||''}','${escHtml(item.code)}')">
-              <div style="font-size:10px;margin-top:2px;">${escHtml(item.code)}</div>
-              <div style="font-size:10px;color:var(--text2)">Qty: ${item.qty}</div>
-            </div>`).join('')}
-        </div>`;
-    }
-
-    // Admin: approve recount 2
-    if (isAdmin && h.recountStatus === 'r1_done') {
-      html += `<hr class="divider"><button class="btn btn-primary btn-full" onclick="approveRecount2('${h.id}')">✅ Approve Recount 2</button>`;
-    }
-    // Admin: delete record
-    if (isAdmin) {
-      html += `<hr class="divider"><button class="btn btn-danger btn-sm" onclick="deleteHistoryRecord('${h.id}')">🗑 Delete Record</button>`;
-    }
-
-    document.getElementById('historyModalTitle').textContent = `#PI · ${h.store} · ${h.week}`;
-    document.getElementById('historyModalContent').innerHTML = html;
-    openModal('historyModal');
-  } catch(e) {
-    showToast('Error loading details: '+e.message, 'error');
-  }
-}
-
-function viewPhoto(url, code) {
-  const html = `<img src="${url}" style="width:100%;border-radius:8px;"><div style="text-align:center;margin-top:8px;font-weight:600;">${escHtml(code)}</div>`;
-  document.getElementById('recountPhotosContent').innerHTML = html;
-  openModal('recountPhotosModal');
-}
-
-async function approveRecount2(id) {
-  if (!confirm('Approve Recount 2 for this store?')) return;
-  try {
-    await db.ref(`pi_history/${id}`).update({ recountStatus: 'r2_approved', r2ApprovedAt: new Date().toISOString(), r2ApprovedBy: APP.profile?.name });
-    showToast('✅ Recount 2 approved', 'success');
-    closeModal('historyModal');
-    renderHistory();
-    renderDashboard();
-  } catch(e) { showToast('Error: '+e.message, 'error'); }
-}
-
-async function deleteHistoryRecord(id) {
-  if (!confirm('Delete this PI record permanently?')) return;
-  try {
-    await db.ref(`pi_history/${id}`).remove();
-    showToast('Record deleted');
-    closeModal('historyModal');
-    renderHistory();
-    renderDashboard();
-  } catch(e) { showToast('Error: '+e.message, 'error'); }
-}
-
-// ── History Exports ──
-function exportHistoryItemExcel() {
-  if (!APP.histItem) return;
-  const wb = XLSX.utils.book_new();
-  const data = [['Code','Dept','Class','Brand','MRP','System Stock','Physical Qty','Variance','Variance Value']];
-  (APP.histItem.result||[]).forEach(r => data.push([r.code,r.dept,r.cls,r.brand,r.mrp,r.sysQty,r.physQty,r.variance,(r.varValue||0).toFixed(2)]));
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, 'Variance');
-  XLSX.writeFile(wb, `PI_${APP.histItem.store}_${APP.histItem.week}.xlsx`);
-}
-
-function exportHistoryItemPDF() {
-  if (!APP.histItem) return;
-  exportVariancePDF(APP.histItem);
-}
-
-function exportHistoryExcel() {
-  showToast('Generating Excel...', 'success');
-  const histEl = document.getElementById('historyList');
-  // gather all visible data - simplified
-  showToast('Use individual record export for detailed data', '');
-}
-
-function exportHistoryPDF() {
-  showToast('Use individual record → PDF for detailed export', '');
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  EXPORT FUNCTIONS
-// ═══════════════════════════════════════════════════════════════
-function exportVarianceExcel() {
-  const sub = APP.currentPIResult;
-  if (!sub) return;
-  const wb = XLSX.utils.book_new();
-  const data = [['Code','Dept','Class','Brand','MRP','System Stock','Physical Qty','Variance','Variance Value']];
-  sub.result.forEach(r => data.push([r.code,r.dept,r.cls,r.brand,r.mrp,r.sysQty,r.physQty,r.variance,(r.varValue||0).toFixed(2)]));
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, 'Variance Report');
-  XLSX.writeFile(wb, `VarianceReport_${sub.store}_${sub.week}.xlsx`);
-}
-
-function exportVariancePDF(sub) {
-  sub = sub || APP.currentPIResult;
-  if (!sub) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape' });
-  doc.setFontSize(14);
-  doc.text(`Variance Report — ${sub.store} | ${sub.week}`, 14, 14);
-  doc.setFontSize(9);
-  doc.text(`Submitted: ${fmtDate(sub.ts)} | Total: ${sub.summary?.total||0} | Variance: ${sub.summary?.varPct||0}%`, 14, 20);
-  doc.autoTable({
-    startY: 25,
-    head: [['Code','Dept','Class','Brand','MRP','Sys Qty','Phys Qty','Variance','Var Value']],
-    body: sub.result.map(r=>[r.code,r.dept,r.cls,r.brand,'₹'+r.mrp,r.sysQty,r.physQty,r.variance,'₹'+(r.varValue||0).toFixed(0)]),
-    styles:{ fontSize:8 },
-    headStyles:{ fillColor:[37,99,235] }
-  });
-  doc.save(`VarianceReport_${sub.store}_${sub.week}.pdf`);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  DASHBOARD
-// ═══════════════════════════════════════════════════════════════
-async function renderDashboard() {
-  const isAdmin = APP.profile?.role === 'admin';
-  document.getElementById('storeDash').style.display = isAdmin ? 'none' : 'block';
-  document.getElementById('adminDash').style.display = isAdmin ? 'block' : 'none';
-
-  if (isAdmin) {
-    renderAdminDashboard();
-  } else {
-    renderStoreDashboard();
-  }
-}
-
-async function renderStoreDashboard() {
-  try {
-    const snap = await db.ref('pi_history').orderByChild('store').equalTo(APP.profile.store).get();
-    const val = snap.val() || {};
-    const records = Object.values(val);
-    const thisWeek = records.filter(r => r.week === APP.piWeek);
-    const latest = thisWeek.sort((a,b) => b.ts.localeCompare(a.ts))[0];
-
-    document.getElementById('sd_counted').textContent = latest?.summary?.total || 0;
-    document.getElementById('sd_variance').textContent = latest?.summary?.totalVar || 0;
-    document.getElementById('sd_history').textContent = records.length;
-
-    const assigned = APP.piAssignment;
-    const isAssigned = assigned?.stores?.includes(APP.profile.store);
-    document.getElementById('sd_piAssigned').textContent = isAssigned ? '✓' : '—';
-
-    const recountPending = records.filter(r => r.recountStatus === 'none' && r.week === APP.piWeek).length;
-    document.getElementById('sd_recount').textContent = recountPending;
-
-    if (latest) {
-      document.getElementById('storePIStatus').style.display = 'block';
-      document.getElementById('storePIStatusContent').innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-          <div><div style="font-weight:700">${APP.piWeek}</div>
-          <div style="font-size:12px;color:var(--text2)">${latest.summary?.total||0} items · ${latest.summary?.varPct||0}% variance</div></div>
-          <div style="display:flex;gap:6px;">
-            <span class="chip chip-green">✅ Submitted</span>
-            <button class="btn btn-sm btn-ghost" onclick="showHistoryDetail('${latest.id}')">View</button>
-          </div>
-        </div>`;
-    }
-  } catch(e){}
-}
-
-async function renderAdminDashboard() {
-  try {
-    const snap = await db.ref('pi_history').limitToLast(500).get();
-    const val  = snap.val() || {};
-    const all  = Object.values(val);
-    const now  = new Date();
-    const week = getWeekString();
-    const month = getMonthString();
-
-    const thisWeek  = all.filter(h => h.week === week);
-    const thisMonth = all.filter(h => h.ts?.startsWith(month));
-
-    document.getElementById('ad_activePIs').textContent = thisWeek.length;
-
-    // Variance %
-    const weekVarTotal = thisWeek.reduce((s,h)=>{
-      const t = h.summary?.total||0, v = h.summary?.totalVar||0;
-      return t > 0 ? s + (v/t)*100 : s;
-    }, 0);
-    document.getElementById('ad_weekVar').textContent = thisWeek.length ? (weekVarTotal/thisWeek.length).toFixed(1)+'%' : '—';
-
-    const monthVarTotal = thisMonth.reduce((s,h)=>{
-      const t = h.summary?.total||0, v = h.summary?.totalVar||0;
-      return t > 0 ? s + (v/t)*100 : s;
-    }, 0);
-    document.getElementById('ad_monthVar').textContent = thisMonth.length ? (monthVarTotal/thisMonth.length).toFixed(1)+'%' : '—';
-
-    const r1Pending = all.filter(h=>h.recountStatus==='r1_done').length;
-    const appPending = all.filter(h=>h.recountStatus==='r1_done').length;
-    document.getElementById('ad_recountReq').textContent = r1Pending;
-    document.getElementById('ad_approvalPending').textContent = appPending;
-
-    // Top variance stores this week
-    const storeVars = {};
-    thisWeek.forEach(h => {
-      const pct = h.summary?.varPct || 0;
-      if (!storeVars[h.store] || pct > storeVars[h.store]) storeVars[h.store] = parseFloat(pct);
-    });
-    const sorted = Object.entries(storeVars).sort((a,b)=>b[1]-a[1]);
-    const avg = sorted.length ? sorted.reduce((s,[,v])=>s+v,0)/sorted.length : 0;
-    document.getElementById('adminTopVariance').innerHTML = sorted.length ? sorted.map(([store,pct])=>`
-      <div class="var-bar ${pct>avg*1.5?'high':pct>avg?'med':'low'}">
-        <div style="font-weight:700">${escHtml(store)}</div>
-        <span class="chip ${pct>avg*1.5?'chip-red':pct>avg?'chip-yellow':'chip-green'}">${pct.toFixed(1)}% variance</span>
-      </div>`) .join('') : '<div style="color:var(--text2);font-size:12px">No submissions this week</div>';
-
-    // Variance trend (last 4 weeks)
-    const weekTrend = {};
-    all.forEach(h => {
-      if (!weekTrend[h.week]) weekTrend[h.week] = { total:0, var:0, count:0 };
-      weekTrend[h.week].total += h.summary?.total||0;
-      weekTrend[h.week].var   += h.summary?.totalVar||0;
-      weekTrend[h.week].count++;
-    });
-    const recentWeeks = Object.entries(weekTrend).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,4).reverse();
-    document.getElementById('adminVarianceTrend').innerHTML = recentWeeks.length ?
-      recentWeeks.map(([w,d])=>{
-        const pct = d.total ? ((d.var/d.total)*100).toFixed(1) : '0.0';
-        const w80 = Math.min(100, parseFloat(pct)*5);
-        return `<div style="margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
-            <span>${w}</span><span>${pct}% (${d.count} stores)</span>
-          </div>
-          <div class="progress-wrap"><div class="progress-bar" style="width:${w80}%"></div></div>
-        </div>`;
-      }).join('') : '<div style="color:var(--text2);font-size:12px">No trend data yet</div>';
-  } catch(e) {}
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  ADMIN — ASSIGN PI
-// ═══════════════════════════════════════════════════════════════
-function openAssignPIModal() {
-  document.getElementById('assignPIWeek').value = APP.piWeek;
-  const list = document.getElementById('assignStoreList');
-  list.innerHTML = STORES.map(s=>`
-    <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:6px;cursor:pointer;">
-      <input type="checkbox" value="${s}" style="accent-color:var(--accent)"> ${s}
-    </label>`).join('');
-  openModal('assignPIModal');
-}
-
-async function doAssignPI() {
-  const week = document.getElementById('assignPIWeek').value;
-  if (!week) { showToast('Select a week', 'error'); return; }
-  const checked = document.querySelectorAll('#assignStoreList input:checked');
-  const stores = Array.from(checked).map(c=>c.value);
-  if (!stores.length) { showToast('Select at least one store', 'error'); return; }
-
-  const assignment = { week, stores, assignedAt: new Date().toISOString(), assignedBy: APP.profile?.name };
-  try {
-    await db.ref(`pi_assignments/${week}`).set(assignment);
-    showToast(`✅ PI assigned for ${week}: ${stores.join(', ')}`, 'success');
-    closeModal('assignPIModal');
-    renderDashboard();
-  } catch(e) { showToast('Error: '+e.message, 'error'); }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  USER MANAGEMENT
-// ═══════════════════════════════════════════════════════════════
-let editingUserId = null;
-
-async function loadAllUsers() {
-  const el = document.getElementById('usersList');
-  if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
-  try {
-    const snap = await db.ref('users').get();
-    const val = snap.val() || {};
-    const users = Object.entries(val).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
-    if (!users.length) { el.innerHTML = '<div class="empty" style="padding:20px"><p>No users yet</p></div>'; return; }
-    el.innerHTML = users.map(([uid, u])=>`
-      <div class="approval-row">
-        <div class="approval-row-info">
-          <div style="font-weight:700">${escHtml(u.name||u.email)}</div>
-          <div style="font-size:12px;color:var(--text2)">${escHtml(u.email)} · ${u.role} ${u.store?'· '+u.store:''}</div>
-        </div>
-        <div class="approval-row-actions">
-          <span class="chip ${u.disabled?'chip-red':'chip-green'}">${u.disabled?'Disabled':'Active'}</span>
-          <button class="btn btn-xs btn-secondary" onclick="editUser('${uid}',${JSON.stringify(u).replace(/"/g,'&quot;')})">Edit</button>
-          <button class="btn btn-xs ${u.disabled?'btn-success':'btn-warning'}" onclick="toggleUserStatus('${uid}',${!!u.disabled})">${u.disabled?'Enable':'Disable'}</button>
-        </div>
-      </div>`).join('');
-  } catch(e) {
-    el.innerHTML = `<div class="info-box red">Error: ${e.message}</div>`;
-  }
-}
-
-function editUser(uid, u) {
-  editingUserId = uid;
-  document.getElementById('userModalTitle').textContent = '✏️ Edit User';
-  document.getElementById('newUserName').value = u.name || '';
-  document.getElementById('newUserEmail').value = u.email || '';
-  document.getElementById('newUserPassword').value = '';
-  document.getElementById('newUserRole').value = u.role || 'store';
-  document.getElementById('newUserStore').value = u.store || '';
-  document.getElementById('saveUserBtn').textContent = 'Update User';
-  openModal('createUserModal');
-}
-
-async function saveUser() {
-  const name  = document.getElementById('newUserName').value.trim();
-  const email = document.getElementById('newUserEmail').value.trim();
-  const pwd   = document.getElementById('newUserPassword').value;
-  const role  = document.getElementById('newUserRole').value;
-  const store = document.getElementById('newUserStore').value;
-
-  if (!name || !email) { showToast('Name and email required', 'error'); return; }
-
-  if (editingUserId) {
-    // Update existing
-    const update = { name, email, role, store };
-    await db.ref(`users/${editingUserId}`).update(update);
-    showToast('✅ User updated', 'success');
-    editingUserId = null;
-    closeModal('createUserModal');
-    loadAllUsers();
-  } else {
-    // Create new — Note: Firebase Auth user creation requires Admin SDK in production
-    // For now, create profile in DB and show instructions
-    if (!pwd || pwd.length < 6) { showToast('Password min 6 characters', 'error'); return; }
-    showToast('⚠️ Create user via Firebase Console → Auth, then their profile will appear here', 'error', 5000);
-    // Save profile with placeholder UID
-    const tempUid = `pending_${Date.now()}`;
-    await db.ref(`users/${tempUid}`).set({ name, email, role, store, pending: true, createdAt: new Date().toISOString() });
-    closeModal('createUserModal');
-    loadAllUsers();
-    showToast('Profile saved. Create auth account in Firebase Console.', 'success', 5000);
-  }
-}
-
-async function toggleUserStatus(uid, currentlyDisabled) {
-  const action = currentlyDisabled ? 'Enable' : 'Disable';
-  if (!confirm(`${action} this user?`)) return;
-  await db.ref(`users/${uid}`).update({ disabled: !currentlyDisabled });
-  showToast(`User ${action.toLowerCase()}d`, 'success');
-  loadAllUsers();
-}
-
-function resetCreateUserModal() {
-  editingUserId = null;
-  document.getElementById('userModalTitle').textContent = '➕ Create User';
-  document.getElementById('newUserName').value = '';
-  document.getElementById('newUserEmail').value = '';
-  document.getElementById('newUserPassword').value = '';
-  document.getElementById('newUserRole').value = 'store';
-  document.getElementById('newUserStore').value = '';
-  document.getElementById('saveUserBtn').textContent = 'Create User';
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  BARCODE SCANNER (Camera)
-// ═══════════════════════════════════════════════════════════════
-let scannerMode = 'pi'; // 'pi' or 'lookup'
-let cameraFacing = 'environment';
-
-function openCameraForPI() { scannerMode = 'pi'; startScanner(); }
-function openCameraForLookup() { scannerMode = 'lookup'; startScanner(); }
-
-function startScanner() {
-  openModal('cameraModal');
-  const config = {
-    fps: 10, qrbox: { width: 250, height: 120 },
-    aspectRatio: 1.5,
-    facingMode: cameraFacing,
-    formatsToSupport: [
-      Html5QrcodeSupportedFormats.CODE_128,
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.QR_CODE
-    ]
-  };
-  if (APP.html5QrCode) { APP.html5QrCode.stop().catch(()=>{}); }
-  APP.html5QrCode = new Html5Qrcode('qr-reader');
-  APP.html5QrCode.start(
-    { facingMode: cameraFacing },
-    config,
-    decodedText => {
-      const code = decodedText.trim().toUpperCase();
-      stopScanner();
-      if (scannerMode === 'pi') {
-        document.getElementById('piBarcode').value = code;
-        lookupPI();
-        switchSection('pi', null);
-      } else {
-        document.getElementById('sohSearch').value = code;
-        renderSOH();
-        switchSection('soh', null);
-      }
-      showToast(`✅ Scanned: ${code}`, 'success');
-    },
-    () => {}
-  ).catch(e => { showToast('Camera error: '+e, 'error'); closeModal('cameraModal'); });
-}
-
-function stopScanner() {
-  if (APP.html5QrCode) {
-    APP.html5QrCode.stop().catch(()=>{});
-    APP.html5QrCode = null;
-  }
-  document.getElementById('qr-reader').innerHTML = '';
-  closeModal('cameraModal');
-}
-
-function switchCamera() {
-  cameraFacing = cameraFacing === 'environment' ? 'user' : 'environment';
-  stopScanner();
-  startScanner();
-}
-
-async function toggleFlashlight() {
-  try {
-    const track = APP.html5QrCode?.getRunningTrackCameraCapabilities?.();
-    showToast('Flash toggle not supported on all devices', '');
-  } catch(e) {}
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  BARCODE GENERATOR
-// ═══════════════════════════════════════════════════════════════
-function generateBarcodes() {
-  const raw = document.getElementById('bcCodes').value.trim();
-  if (!raw) { showToast('Enter product codes', 'error'); return; }
-  const codes = [...new Set(raw.split('\n').map(c=>c.trim()).filter(Boolean))];
-  if (codes.length > 500) { showToast('Max 500 codes per batch', 'error'); return; }
-
-  const grid = document.getElementById('barcodePreview');
-  grid.innerHTML = '';
-  let success = 0;
-
-  codes.forEach(code => {
-    const row = APP.sohMap[code.toUpperCase()] || {};
-    const label = document.createElement('div');
-    label.className = 'bc-label';
-
-    const brand = document.createElement('div');
-    brand.className = 'lbl-brand';
-    brand.textContent = 'KIDZA';
-
-    const info = document.createElement('div');
-    info.className = 'lbl-info';
-    const cls = row.Class || '';
-    const mrp = row.MRP  ? '₹'+row.MRP : '';
-    info.textContent = [cls, mrp].filter(Boolean).join(' · ');
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-
-    const codeDiv = document.createElement('div');
-    codeDiv.className = 'lbl-code';
-    codeDiv.textContent = code;
-
-    label.appendChild(brand);
-    if (info.textContent) label.appendChild(info);
-    label.appendChild(svg);
-    label.appendChild(codeDiv);
-    grid.appendChild(label);
-
-    try {
-      JsBarcode(svg, code, {
-        format: 'CODE128', width: 1.5, height: 34,
-        displayValue: false, margin: 1,
-        background: '#ffffff', lineColor: '#000000'
-      });
-      success++;
-    } catch(e) { codeDiv.textContent = '⚠ Invalid: '+code; }
-  });
-
-  document.getElementById('bcCount').textContent = success;
-  document.getElementById('barcodePreviewWrap').style.display = 'block';
-  showToast(`✅ Generated ${success} labels`, 'success');
-}
-
-function printBarcodes() {
-  const preview = document.getElementById('barcodePreview');
-  if (!preview.children.length) { showToast('Generate labels first', 'error'); return; }
-  const printArea = document.getElementById('printArea');
-  printArea.innerHTML = `<div style="padding:8mm;">${preview.outerHTML}</div>`;
-  printArea.style.display = 'block';
-  document.getElementById('appShell').style.display = 'none';
-  window.print();
-  document.getElementById('appShell').style.display = 'flex';
-  printArea.style.display = 'none';
-}
-
-async function exportBarcodePDF() {
-  const preview = document.getElementById('barcodePreview');
-  if (!preview.children.length) { showToast('Generate labels first', 'error'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ format:'a4', unit:'mm' });
-  // Simplified: use print instead for accurate label sizing
-  showToast('For best results, use Print (A4) for label sheets', '');
-  printBarcodes();
-}
-
-function clearBarcodes() {
-  document.getElementById('barcodePreview').innerHTML = '';
-  document.getElementById('barcodePreviewWrap').style.display = 'none';
-  document.getElementById('bcCount').textContent = '0';
-  document.getElementById('bcCodes').value = '';
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  MODAL CLOSE ON OVERLAY CLICK
-// ═══════════════════════════════════════════════════════════════
-document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => {
-    if (e.target === m) {
-      if (m.id === 'cameraModal') stopScanner();
-      else m.classList.remove('open');
-    }
-  });
-});
-
-// Close create user modal resets form
-document.getElementById('createUserModal').addEventListener('click', e => {
-  if (e.target.className === 'modal-overlay' || e.target.closest('.btn-secondary')?.textContent === 'Cancel') {
-    resetCreateUserModal();
-  }
-});
-
-// ── SOH drop zone ──
-const dropZone = document.getElementById('sohDropZone');
-if (dropZone) {
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--accent)'; });
-  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor='var(--border)'; });
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.style.borderColor='var(--border)';
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const event = { target: { files: [file], value:'' } };
-      handleSOHUpload(event);
-    }
-  });
-}
-
-// ── Initial offline check ──
-if (!navigator.onLine) document.getElementById('offlineBanner').style.display = 'block';
-
-// ── Load PI draft on init (triggered after login) ──
-// (called inside afterLogin via piSection init)
+  if(restoreS()){
+    if(CUR.user.role==='admin'){NS.length=0;NS.push('s-admin');renderAdmin();showScreen('s-admin');}
+    else{NS.length=0;NS.push('s-home');goHome();}
+  }else{showScreen('s-login');}
+})();
 </script>
 </body>
 </html>
