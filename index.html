@@ -1068,8 +1068,7 @@ function renderSOH() {
   const q=($('sohQ')?.value||'').trim().toLowerCase();
   const isAdmin=A.user?.role==='admin';
   let data=A.soh;
-  if (!isAdmin) data=data.filter(r=>(r.StoreName||'').trim()===A.user?.store);
-  else if (A.sohStore!=='ALL') data=data.filter(r=>(r.StoreName||'').trim()===A.sohStore);
+  if (isAdmin && A.sohStore!=='ALL') data=data.filter(r=>(r.StoreName||'').trim()===A.sohStore);
   if (q) data=data.filter(r=>
     (r.ProductCode||'').toLowerCase().includes(q)||
     (r.Brand||'').toLowerCase().includes(q)||
