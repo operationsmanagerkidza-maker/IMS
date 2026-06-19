@@ -49,7 +49,7 @@ const PRESET_ADMIN = {
 };
 
 /* ── STEP 4: Your store names ── */
-const STORES = ["KATTUR","CUMBUM","MG TRADERS","THENI","DINDIGUL"];
+const STORES = ["Kattur","Cumbum","MGT","Theni","Dindigul"];
 </script>
 <!-- ════════════════════════════════════════════════════════ -->
 
@@ -369,7 +369,7 @@ tr:hover td{background:rgba(37,99,235,.025);}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Physical Inventory</button>
       <button class="nbtn" onclick="goSec('history',this)" data-s="history">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>PI History</button>
-      <button class="nbtn" onclick="goSec('barcode',this)" data-s="barcode">
+      <button class="nbtn admEl" style="display:none" onclick="goSec('barcode',this)" data-s="barcode">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v3M7 5v3M13 5v3M17 5v3M21 5v3M3 16v3M7 16v3M13 16v3M17 16v3M21 16v3M3 9h4M17 9h4M3 12h18"/></svg>Barcode Labels</button>
       <div class="nsec admEl" style="display:none">Admin</div>
       <button class="nbtn admEl" style="display:none" onclick="goSec('users',this)" data-s="users">
@@ -390,7 +390,7 @@ tr:hover td{background:rgba(37,99,235,.025);}
                 <div class="scard ca"><div class="sval" id="s1">—</div><div class="slbl">📌 PI This Week</div></div>
                 <div class="scard co"><div class="sval" id="s2">0</div><div class="slbl">✅ Items Counted</div></div>
                 <div class="scard cd"><div class="sval" id="s3">0</div><div class="slbl">⚠️ Variance Items</div></div>
-                <div class="scard cp"><div class="sval" id="s4">0</div><div class="slbl">🔄 Recount Pending</div></div>
+                <div class="scard cp"><div class="sval" id="s4">0</div><div class="slbl">🔄 Recounts Done</div></div>
                 <div class="scard cw"><div class="sval" id="s5">0</div><div class="slbl">📁 Total PI Records</div></div>
                 <div class="scard cg"><div class="sval" id="s6">—</div><div class="slbl">📅 Status</div></div>
               </div>
@@ -399,7 +399,7 @@ tr:hover td{background:rgba(37,99,235,.025);}
                   <button class="btn bp bsm" onclick="goSec('pi',null)">📋 Open PI</button>
                   <button class="btn bsc bsm" onclick="goSec('soh',null)">🔍 Stock Lookup</button>
                   <button class="btn bsc bsm" onclick="goSec('history',null)">📁 History</button>
-                  <button class="btn bsc bsm" onclick="goSec('barcode',null)">🏷 Barcodes</button>
+                  <button class="btn bsc bsm admEl" style="display:none" onclick="goSec('barcode',null)">🏷 Barcodes</button>
                 </div>
               </div>
             </div>
@@ -410,8 +410,8 @@ tr:hover td{background:rgba(37,99,235,.025);}
                 <div class="scard co"><div class="sval" id="a2">0</div><div class="slbl">✅ PIs This Week</div></div>
                 <div class="scard cw"><div class="sval" id="a3">—</div><div class="slbl">📊 Week Variance%</div></div>
                 <div class="scard cd"><div class="sval" id="a4">—</div><div class="slbl">📈 Month Variance%</div></div>
-                <div class="scard cp"><div class="sval" id="a5">0</div><div class="slbl">🔄 Recount Requests</div></div>
-                <div class="scard cg"><div class="sval" id="a6">0</div><div class="slbl">⏳ Approvals Pending</div></div>
+                <div class="scard cp"><div class="sval" id="a5">0</div><div class="slbl">🔄 PIs with Recount</div></div>
+                <div class="scard cg"><div class="sval" id="a6">0</div><div class="slbl">🔒 Products Recounted</div></div>
               </div>
               <div class="card">
                 <div class="ctrow"><span class="cttl" style="margin:0">⚠️ Top Variance Stores — This Week</span></div>
@@ -445,6 +445,9 @@ tr:hover td{background:rgba(37,99,235,.025);}
           <div id="sec-pi" class="section">
             <div class="shd"><h2>🔍 Physical Inventory</h2><span id="piWBg" class="wbg"></span></div>
             <div id="piBnr" style="display:none"></div>
+            <div id="piHdrTitle" style="display:none;background:var(--acl);border:1px solid rgba(37,99,235,.2);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;font-size:13px;">
+              <span style="color:var(--tx2)">📋 Assignment Title:</span> <b id="piHdrTitleTxt">—</b>
+            </div>
             <div id="piNone" style="display:none;text-align:center;padding:40px 20px;color:var(--tx2);">
               <div style="font-size:40px;margin-bottom:10px">📌</div>
               <div style="font-weight:700;color:var(--tx);margin-bottom:6px">No PI Assigned</div>
@@ -452,16 +455,29 @@ tr:hover td{background:rgba(37,99,235,.025);}
             </div>
             <div id="piBody">
               <div class="card">
-                <div class="ctrow"><span class="cttl" style="margin:0">Scan / Enter Product</span>
-                  <button class="btn bgh bsm" onclick="openCam('pi')">📷 Camera</button></div>
+                <div class="ctrow"><span class="cttl" style="margin:0">Scan Method</span></div>
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                  <button class="btn bsm bp" id="piModeCamBtn" onclick="setScanMode('camera')" style="flex:1;">📷 Camera Scanner</button>
+                  <button class="btn bsm bsc" id="piModeBtBtn" onclick="setScanMode('bluetooth')" style="flex:1;">🔵 Bluetooth Scanner</button>
+                </div>
+                <div id="piAutoBadge" class="chip cgr" style="margin-bottom:10px;">⚡ Auto Entry: ON — every scan saves automatically</div>
+
+                <div id="piCamPane">
+                  <button class="btn bgh bfl bsm" onclick="openCam('pi')" style="margin-bottom:10px;">📷 Open Camera Scanner</button>
+                </div>
+                <div id="piBtPane" style="display:none;">
+                  <div id="piBtStatus" class="chip crd" style="margin-bottom:8px;">🔴 Bluetooth scanner not connected</div>
+                  <p style="font-size:11px;color:var(--tx2);margin-bottom:8px;">Pair your Bluetooth barcode scanner from your device's Bluetooth settings, then scan — the field below auto-receives input.</p>
+                </div>
+
                 <div class="scanbox">
                   <div style="font-size:26px;margin-bottom:6px">📱</div>
-                  <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Scan barcode or type code then press Enter</p>
+                  <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Scan barcode (auto-submits) or type code then press Enter</p>
                   <input class="scancode" id="piCode" type="text" placeholder="PRODUCT CODE"
-                    autocomplete="off" inputmode="numeric" spellcheck="false"
-                    oninput="piCodeCh()" onkeydown="if(event.key==='Enter')lookupCode()">
+                    autocomplete="off" inputmode="text" spellcheck="false"
+                    oninput="piCodeCh()" onkeydown="if(event.key==='Enter'){event.preventDefault();scanSubmit();}">
                 </div>
-                <div id="piInfo" style="display:none;background:var(--acl);border:1px solid rgba(37,99,235,.2);border-radius:var(--rs);padding:11px;margin-bottom:10px;">
+                <div id="piInfo" style="display:none;background:var(--acl);border:1px solid rgba(37,99,235,.2);border-radius:var(--rs);padding:11px;">
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;">
                     <div><span style="color:var(--tx2)">Code:</span> <b id="pic">—</b></div>
                     <div><span style="color:var(--tx2)">Dept:</span> <b id="pid">—</b></div>
@@ -470,15 +486,6 @@ tr:hover td{background:rgba(37,99,235,.025);}
                     <div><span style="color:var(--tx2)">MRP:</span> <b id="pim">—</b></div>
                     <div><span style="color:var(--tx2)">Sys Stock:</span> <b id="pis">—</b></div>
                   </div>
-                </div>
-                <div style="display:flex;gap:8px;align-items:flex-end;">
-                  <div class="field" style="flex:1;margin:0">
-                    <label>Physical Quantity</label>
-                    <input class="inp" type="number" id="piQty" placeholder="Enter qty" min="0"
-                      style="font-size:16px;font-weight:700;"
-                      onkeydown="if(event.key==='Enter')addPI()">
-                  </div>
-                  <button class="btn bp" style="height:42px;" onclick="addPI()">+ Add</button>
                 </div>
               </div>
               <div class="card">
@@ -573,8 +580,8 @@ tr:hover td{background:rgba(37,99,235,.025);}
             </div>
             <!-- Recount approvals -->
             <div class="card">
-              <div class="cttl">📷 Recount Approval Requests</div>
-              <div id="rcApprovals"><div style="color:var(--tx2);font-size:12px;">No pending requests</div></div>
+              <div class="cttl">📷 Submitted Recounts (Audit)</div>
+              <div id="rcApprovals"><div style="color:var(--tx2);font-size:12px;">No recounts submitted yet</div></div>
             </div>
             <!-- Users list -->
             <div class="card">
@@ -634,7 +641,7 @@ tr:hover td{background:rgba(37,99,235,.025);}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>PI</button>
     <button class="nbb" onclick="goSec('history',this)" data-s="history">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>History</button>
-    <button class="nbb" onclick="goSec('barcode',this)" data-s="barcode">
+    <button class="nbb admEl" style="display:none" onclick="goSec('barcode',this)" data-s="barcode">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v3M7 5v3M13 5v3M17 5v3M21 5v3M3 16v3M7 16v3M13 16v3M17 16v3M21 16v3M3 9h4M17 9h4M3 12h18"/></svg>Labels</button>
   </nav>
 </div>
@@ -678,6 +685,8 @@ tr:hover td{background:rgba(37,99,235,.025);}
     <h3>📌 Assign Physical Inventory</h3>
     <div class="field"><label>Week</label>
       <input type="week" class="inp" id="assignWk" style="padding:10px 12px;"></div>
+    <div class="field"><label>Header Title</label>
+      <input type="text" class="inp" id="assignHdrTitle" placeholder="e.g. Monthly Toys & Nursery Count" style="padding:10px 12px;"></div>
     <div class="field"><label>Select Stores</label>
       <div id="assignSts" style="display:flex;flex-direction:column;gap:6px;"></div></div>
     <div class="mfoot">
@@ -824,6 +833,7 @@ let A = {
   qrScanner: null,
   curResult: null,
   histItem: null,
+  scanMode: '', // 'camera' | 'bluetooth'
 };
 let editUID = null;
 
@@ -988,6 +998,7 @@ function afterLogin() {
 //  NAVIGATION
 // ═══════════════════════════════════════════════════════════
 function goSec(name, btn) {
+  if (name==='barcode' && A.user?.role!=='admin') { toast('Admin access only','err'); name='dashboard'; }
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nbb,.nbtn').forEach(b=>b.classList.remove('on'));
   $('sec-'+name).classList.add('on');
@@ -1176,45 +1187,87 @@ function initPI() {
     $('piBnr').style.display='block';
     $('piBnr').innerHTML=`<div class="info ibl" style="margin-bottom:12px;">📌 <b>PI Assigned — ${A.piWeek}</b> · ${fmtDt(assigned.assignedAt)}</div>`;
   } else { $('piBnr').style.display='none'; }
+  // Header Title: admin sets it on assignment; store users see it read-only, cannot edit.
+  if (assigned && assigned.headerTitle) {
+    $('piHdrTitle').style.display='block';
+    $('piHdrTitleTxt').textContent=assigned.headerTitle;
+  } else { $('piHdrTitle').style.display='none'; }
+  if (!A.scanMode) setScanMode('camera');
   if (A.piItems.length===0) loadPIDraft();
   renderPIList(); checkRecount();
 }
 
 function piCodeCh(){ $('piInfo').style.display='none'; }
 
-function lookupCode() {
-  const code=$('piCode').value.trim().toUpperCase(); if(!code)return;
-  const row=lookupSOH(code);
-  if (row) {
-    $('pic').textContent=row.ProductCode||code; $('pid').textContent=row.Department||'—';
-    $('picl').textContent=row.Class||'—'; $('pib').textContent=row.Brand||'—';
-    $('pim').textContent=row.MRP?'₹'+row.MRP:'—'; $('pis').textContent=row.SOH||row.soh||'—';
-    $('piInfo').style.display='block';
-  } else {
-    $('piInfo').style.display='none';
-    toast('Not in SOH — will still be captured','');
-  }
-  $('piQty').focus();
-}
-
-function addPI() {
+/* Auto Entry: scanning/entering a code immediately records one scan — no manual qty, no Save button. */
+function scanSubmit() {
   const code=$('piCode').value.trim().toUpperCase();
-  const qty=parseInt($('piQty').value);
-  if (!code){toast('Enter a product code','err');return;}
-  if (isNaN(qty)||qty<0){toast('Enter valid quantity','err');return;}
-  const row=lookupSOH(code)||{};
+  if (!code) return;
+  const row=lookupSOH(code);
+  if (!row) {
+    // Item does not belong to this store's inventory — reject, do not save.
+    $('piInfo').style.display='none';
+    alert('Item Not Found');
+    toast('❌ Item Not Found','err');
+    $('piCode').value=''; $('piCode').focus();
+    return;
+  }
+  $('pic').textContent=row.ProductCode||code; $('pid').textContent=row.Department||'—';
+  $('picl').textContent=row.Class||'—'; $('pib').textContent=row.Brand||'—';
+  $('pim').textContent=row.MRP?'₹'+row.MRP:'—'; $('pis').textContent=row.SOH||row.soh||'—';
+  $('piInfo').style.display='block';
+
   const ex=A.piItems.find(i=>i.code===code);
-  if (ex){ex.physQty=qty;toast(`Updated ${code}: Qty ${qty}`);}
+  if (ex) { ex.physQty+=1; toast(`✅ ${code} · Scan Count ${ex.physQty}`,'ok'); }
   else { A.piItems.push({code,dept:row.Department||'—',cls:row.Class||'—',brand:row.Brand||'—',
-    mrp:row.MRP||'0',soh:parseFloat(row.SOH||row.soh||0)||0,physQty:qty}); toast(`✅ Added ${code}`,'ok'); }
+    mrp:row.MRP||'0',soh:parseFloat(row.SOH||row.soh||0)||0,physQty:1}); toast(`✅ Added ${code} · Scan Count 1`,'ok'); }
+
+  logScan(code); // multi-user scan log for consolidated inventory merge
   autoSavePI();
-  $('piCode').value=''; $('piQty').value=''; $('piInfo').style.display='none'; $('piCode').focus();
+  $('piCode').value=''; $('piCode').focus();
   renderPIList();
 }
+
+/* Scan method toggle: camera scanner vs Bluetooth (Bluetooth scanners type into the focused field like a keyboard) */
+function setScanMode(mode) {
+  A.scanMode=mode;
+  $('piModeCamBtn').classList.toggle('bp', mode==='camera');
+  $('piModeCamBtn').classList.toggle('bsc', mode!=='camera');
+  $('piModeBtBtn').classList.toggle('bp', mode==='bluetooth');
+  $('piModeBtBtn').classList.toggle('bsc', mode!=='bluetooth');
+  $('piCamPane').style.display = mode==='camera'?'block':'none';
+  $('piBtPane').style.display  = mode==='bluetooth'?'block':'none';
+  if (mode==='bluetooth') { $('piCode').focus(); }
+}
+
+/* Bluetooth scanners (incl. MIT App Inventor BluetoothClient bridge) call this after receiving a barcode */
+function btScanReceived(code) {
+  $('piBtStatus').className='chip cgr';
+  $('piBtStatus').textContent='🟢 Bluetooth scanner connected';
+  $('piCode').value=(code||'').trim().toUpperCase();
+  scanSubmit();
+}
+window.btScanReceived = btScanReceived; // exposed for MIT App Inventor WebView bridge
 
 function autoSavePI() {
   const draft={store:A.user.store,week:A.piWeek,items:A.piItems,at:new Date().toISOString()};
   fbSet('pi_drafts/'+A.user.uid,draft); LS.set('piDraft',draft);
+}
+
+/* MULTI-USER SCAN LOG — every scan increments a per-user, per-store, per-product counter
+   so admin can see consolidated totals across simultaneous scanners and keep an audit trail. */
+function logScan(code) {
+  const week=A.piWeek, store=A.user.store, uid=A.user.uid;
+  const path=`pi_scanlogs/${week}/${store}/${code}/${uid}`;
+  db.ref(path).transaction(cur=>({
+    count:(cur&&cur.count||0)+1,
+    userName:A.user.name||A.user.username,
+    store, code, lastScanAt:new Date().toISOString()
+  })).catch(()=>{});
+  // Audit trail: append-only log of every individual scan event
+  db.ref(`pi_scanaudit/${week}/${store}`).push({
+    code, uid, userName:A.user.name||A.user.username, store, ts:new Date().toISOString()
+  }).catch(()=>{});
 }
 
 async function loadPIDraft() {
@@ -1235,8 +1288,7 @@ function renderPIList() {
     <div class="pirow">
       <div><div class="picode">${esc(it.code)}</div>
         <div class="pimeta">${esc(it.dept)} · ${esc(it.cls)} · ${esc(it.brand)} · ₹${esc(it.mrp)}</div></div>
-      <input class="qinp" type="number" value="${it.physQty}" min="0"
-        onchange="A.piItems[${i}].physQty=parseInt(this.value)||0;autoSavePI()">
+      <span class="chip cgr" title="Quantity = number of scans">📦 ${it.physQty}</span>
       <button class="dbtn" onclick="A.piItems.splice(${i},1);renderPIList();autoSavePI()">✕</button>
     </div>`).join('');
 }
@@ -1250,20 +1302,22 @@ function clearPI() {
 async function submitPI() {
   if(!A.piItems.length)return;
   if(!confirm('Submit Physical Inventory? This cannot be undone.'))return;
+  showL('Merging multi-user scans…');
+  const merged = await mergeStoreScans(A.piWeek, A.user.store, A.piItems);
   showL('Generating variance report…');
-  const result=A.piItems.map(it=>{
+  const result=merged.map(it=>{
     const sys=it.soh||0,phys=it.physQty,vr=phys-sys,mrp=parseFloat(it.mrp)||0;
-    return{code:it.code,dept:it.dept,cls:it.cls,brand:it.brand,mrp:it.mrp,sysQty:sys,physQty:phys,variance:vr,varVal:vr*mrp};
+    return{code:it.code,dept:it.dept,cls:it.cls,brand:it.brand,mrp:it.mrp,sysQty:sys,physQty:phys,variance:vr,varVal:vr*mrp,scanBy:it.scanBy||[]};
   });
   const tv=result.filter(r=>r.variance!==0).length;
   const pos=result.filter(r=>r.variance>0).length, neg=result.filter(r=>r.variance<0).length;
   const tvv=result.reduce((s,r)=>s+r.varVal,0);
   const id=`${A.user.store}_${A.piWeek}_${Date.now()}`;
   const sub={id,store:A.user.store,week:A.piWeek,ts:new Date().toISOString(),
-    items:A.piItems,result,submittedBy:A.user.name||A.user.username,
+    items:merged,result,submittedBy:A.user.name||A.user.username,
     summary:{total:result.length,matched:result.length-tv,totalVar:tv,pos,neg,tvv,
       varPct:result.length?((tv/result.length)*100).toFixed(1):'0'},
-    recountStatus:'none'};
+    recountStatus:'none',recountLocked:false};
   A.curResult=sub;
   try {
     await db.ref('pi_history/'+id).set(sub);
@@ -1272,6 +1326,29 @@ async function submitPI() {
     showVarReport(sub); checkRecount(); renderHist(); renderDash();
     toast('✅ Physical Inventory submitted!','ok');
   } catch(e){hideL();toast('Failed: '+e.message,'err');}
+}
+
+/* Merge this user's locally-counted items with every other user's scan-log totals for the
+   same store + week, so simultaneous scanning from multiple devices consolidates correctly.
+   Example: User A scans Product X twice, User B scans once → merged Product X qty = 3. */
+async function mergeStoreScans(week, store, localItems) {
+  const byCode={};
+  localItems.forEach(it=>{ byCode[it.code]={...it, scanBy:[]}; });
+  try {
+    const snap = await db.ref(`pi_scanlogs/${week}/${store}`).get();
+    const val = snap.val()||{};
+    Object.entries(val).forEach(([code,users])=>{
+      const totalQty = Object.values(users).reduce((s,u)=>s+(u.count||0),0);
+      const scanBy = Object.values(users).map(u=>({userName:u.userName,count:u.count}));
+      if (byCode[code]) { byCode[code].physQty = totalQty; byCode[code].scanBy = scanBy; }
+      else {
+        const row = lookupSOH(code) || {};
+        byCode[code] = {code, dept:row.Department||'—', cls:row.Class||'—', brand:row.Brand||'—',
+          mrp:row.MRP||'0', soh:parseFloat(row.SOH||row.soh||0)||0, physQty:totalQty, scanBy};
+      }
+    });
+  } catch(e){ /* if scan logs unavailable, fall back to local items only */ }
+  return Object.values(byCode);
 }
 
 function showVarReport(sub) {
@@ -1311,47 +1388,60 @@ async function checkRecount() {
   } catch(e){$('rcSec').style.display='none';}
 }
 
+/* ONE recount per product only. Once a product has a recount on file, it is locked — no further recount allowed. */
 function renderRc(pi) {
-  const el=$('rcBody'), st=pi.recountStatus||'none';
-  if      (st==='none')        el.innerHTML=`<div class="info ibl" style="margin-bottom:10px">Photo proof required per product code.</div><button class="btn bwn bfl" onclick="startRC(1,'${pi.id}')">📷 Start Recount 1</button>`;
-  else if (st==='r1_done')     el.innerHTML=`<span class="chip cgr">✅ Recount 1 Submitted</span><p style="font-size:12px;color:var(--tx2);margin-top:8px">Awaiting admin approval for Recount 2.</p>`;
-  else if (st==='r2_approved') el.innerHTML=`<span class="chip cgr">✅ R1 Done · Admin approved R2</span><br><button class="btn bp bfl" style="margin-top:10px" onclick="startRC(2,'${pi.id}')">📷 Start Recount 2</button>`;
-  else if (st==='r2_done')     el.innerHTML=`<span class="chip cpr">✅ Both Recounts Complete</span>`;
+  const el=$('rcBody'), rcData=pi.recountData||{};
+  const lockedCodes=Object.keys(rcData);
+  el.innerHTML=`
+    <div class="info ibl" style="margin-bottom:10px">Only one recount is allowed per product. Final Quantity + photo proof are mandatory.</div>
+    <button class="btn bwn bfl" onclick="startRC('${pi.id}')">📷 Start Recount</button>
+    ${lockedCodes.length?`<div class="dvd"></div><div class="cttl" style="margin-bottom:6px">🔒 Recounted Products (locked)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">${lockedCodes.map(c=>{
+        const r=rcData[c];
+        return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sf2);border-radius:6px;padding:7px 10px;font-size:12px;">
+          <div><b>${esc(c)}</b> · Final Qty ${r.finalQty} <br><span style="color:var(--tx2)">${esc(r.userName)} · ${fmtDt(r.timestamp)}</span></div>
+          <span class="chip cgr">🔒 Locked</span></div>`;
+      }).join('')}</div>`:''}`;
 }
 
-let RC={piId:null,num:0,items:{}};
+let RC={piId:null,items:{},locked:[]};
 
-function startRC(num,piId) {
-  RC={piId,num,items:{}};
-  const m=document.createElement('div'); m.className='ovl open'; m.id='rcModal';
-  m.innerHTML=`<div class="modal" style="max-width:400px">
-    <h3>🔄 Recount ${num}</h3>
-    <div class="info iyl" style="margin-bottom:10px">For each product: enter code + qty + capture photo (mandatory).</div>
-    <div class="field"><label>Product Code</label><input class="inp" id="rc_c" placeholder="Product code" inputmode="numeric"></div>
-    <div class="field"><label>Quantity</label><input class="inp" type="number" id="rc_q" placeholder="Qty" min="0"></div>
-    <input type="file" id="rc_cam" accept="image/*" capture="environment" style="display:none" onchange="rcPhoto()">
-    <button class="btn bsc bfl bsm" onclick="document.getElementById('rc_cam').click()">📷 Capture Photo for Code</button>
-    <div id="rc_list" style="margin-top:10px;max-height:180px;overflow-y:auto;"></div>
-    <div class="mfoot">
-      <button class="btn bsc" onclick="$('rcModal').remove()">Cancel</button>
-      <button class="btn bok" onclick="submitRC()">✅ Submit Recount ${num}</button>
-    </div></div>`;
-  document.body.appendChild(m);
+function startRC(piId) {
+  RC={piId,items:{},locked:[]};
+  db.ref('pi_history/'+piId).get().then(snap=>{
+    const h=snap.val()||{};
+    RC.locked=Object.keys(h.recountData||{});
+    const m=document.createElement('div'); m.className='ovl open'; m.id='rcModal';
+    m.innerHTML=`<div class="modal" style="max-width:400px">
+      <h3>🔄 Recount (One per Product)</h3>
+      <div class="info iyl" style="margin-bottom:10px">Enter code + Final Quantity + mandatory proof photo. Once submitted, that product is locked — no further recount allowed.</div>
+      <div class="field"><label>Product Code</label><input class="inp" id="rc_c" placeholder="Product code"></div>
+      <div class="field"><label>Final Quantity</label><input class="inp" type="number" id="rc_q" placeholder="Final qty" min="0"></div>
+      <input type="file" id="rc_cam" accept="image/*" capture="environment" style="display:none" onchange="rcPhoto()">
+      <button class="btn bsc bfl bsm" onclick="document.getElementById('rc_cam').click()">📷 Capture Proof Photo (mandatory)</button>
+      <div id="rc_list" style="margin-top:10px;max-height:180px;overflow-y:auto;"></div>
+      <div class="mfoot">
+        <button class="btn bsc" onclick="$('rcModal').remove()">Cancel</button>
+        <button class="btn bok" onclick="submitRC()">✅ Submit Recount</button>
+      </div></div>`;
+    document.body.appendChild(m);
+  });
 }
 
 function rcPhoto() {
   const code=($('rc_c')?.value||'').trim().toUpperCase();
   const qty=parseInt($('rc_q')?.value||'');
   if (!code){toast('Enter code first','err');return;}
-  if (isNaN(qty)){toast('Enter quantity','err');return;}
+  if (RC.locked.includes(code)){toast(`${code} already recounted — only one recount allowed per product`,'err');$('rc_cam').value='';return;}
+  if (isNaN(qty)||qty<0){toast('Enter Final Quantity','err');return;}
   const file=$('rc_cam').files[0]; if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    RC.items[code]={code,qty,photo:e.target.result,ts:new Date().toISOString()};
+    RC.items[code]={code,finalQty:qty,photo:e.target.result,ts:new Date().toISOString()};
     $('rc_list').innerHTML=Object.values(RC.items).map(it=>`
       <div style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--sf2);border-radius:6px;margin-bottom:4px;">
         <img src="${it.photo}" style="width:38px;height:38px;object-fit:cover;border-radius:4px;flex-shrink:0">
-        <div><b>${esc(it.code)}</b> · Qty ${it.qty}</div>
+        <div><b>${esc(it.code)}</b> · Final Qty ${it.finalQty}</div>
         <button class="btn bxs bdn" style="margin-left:auto" onclick="delete RC.items['${it.code}'];rcPhoto()">✕</button>
       </div>`).join('');
     $('rc_c').value=''; $('rc_q').value='';
@@ -1361,54 +1451,50 @@ function rcPhoto() {
 }
 
 async function submitRC() {
-  const items=Object.values(RC.items);
-  if (!items.length){toast('Capture at least one photo','err');return;}
-  showL('Uploading photos…');
+  const items=Object.values(RC.items).filter(it=>!RC.locked.includes(it.code));
+  if (!items.length){toast('Capture at least one product with mandatory photo','err');return;}
+  showL('Uploading proof photos…');
   const uploads={};
   for (const it of items) {
     try {
       let photoURL = null;
       if (gdriveConfigured()) {
-        const fname = `RC_${RC.piId}_R${RC.num}_${it.code}_${Date.now()}.jpg`;
+        const fname = `RC_${RC.piId}_${it.code}_${Date.now()}.jpg`;
         photoURL = await uploadPhotoToDrive(it.photo, fname);
       }
-      uploads[it.code] = { code:it.code, qty:it.qty, photoURL: photoURL||null, photoBase64: photoURL?null:it.photo, ts:it.ts };
+      uploads[it.code] = { code:it.code, finalQty:it.finalQty, userName:A.user.name||A.user.username,
+        timestamp:it.ts, photoURL: photoURL||null, photoBase64: photoURL?null:it.photo };
     } catch(e) {
-      // Fallback: save base64 if Drive upload fails
-      uploads[it.code] = { code:it.code, qty:it.qty, photoBase64:it.photo, ts:it.ts };
+      // Fallback: save base64 if Drive upload fails — still locked once saved
+      uploads[it.code] = { code:it.code, finalQty:it.finalQty, userName:A.user.name||A.user.username,
+        timestamp:it.ts, photoBase64:it.photo };
       toast(`⚠️ Drive upload failed for ${it.code}, saved locally`,'');
     }
   }
-  const k=RC.num===1?'r1':'r2';
-  const upd={recountStatus:RC.num===1?'r1_done':'r2_done',
-    [`${k}Data`]:uploads,[`${k}At`]:new Date().toISOString(),[`${k}By`]:A.user.name||A.user.username};
   try {
-    await fbUpd('pi_history/'+RC.piId,upd);
-    hideL(); toast(`✅ Recount ${RC.num} submitted`,'ok');
-    $('rcModal')?.remove(); checkRecount(); loadRcApprovals();
+    // Merge into recountData (locking each product) rather than overwrite — preserves earlier locked products
+    for (const code of Object.keys(uploads)) {
+      await fbSet(`pi_history/${RC.piId}/recountData/${code}`, uploads[code]);
+    }
+    await fbSet(`pi_history/${RC.piId}/recountStatus`,'done');
+    hideL(); toast(`✅ Recount submitted — product(s) now locked`,'ok');
+    $('rcModal')?.remove(); checkRecount(); renderHist(); renderDash();
   } catch(e){hideL();toast('Failed: '+e.message,'err');}
-}
-
-async function approveR2(id) {
-  if(!confirm('Approve Recount 2 for this store?'))return;
-  await fbUpd('pi_history/'+id,{recountStatus:'r2_approved',r2ApprovedAt:new Date().toISOString(),r2ApprovedBy:A.user.name});
-  toast('✅ Recount 2 Approved','ok');
-  loadRcApprovals(); renderHist(); renderDash();
 }
 
 async function loadRcApprovals() {
   const el=$('rcApprovals'); if(!el)return;
   try {
-    const snap=await db.ref('pi_history').orderByChild('recountStatus').equalTo('r1_done').get();
+    const snap=await db.ref('pi_history').orderByChild('week').equalTo(A.piWeek).get();
     const val=snap.val();
-    if (!val){el.innerHTML='<div style="color:var(--tx2);font-size:12px;">No pending requests</div>';return;}
-    el.innerHTML=Object.values(val).map(h=>`
+    const withRc = val ? Object.values(val).filter(h=>h.recountData&&Object.keys(h.recountData).length) : [];
+    if (!withRc.length){el.innerHTML='<div style="color:var(--tx2);font-size:12px;">No recounts submitted yet</div>';return;}
+    el.innerHTML=withRc.map(h=>`
       <div class="aprow">
         <div><b>${esc(h.store)}</b> · ${esc(h.week)}<br>
-          <span style="font-size:11px;color:var(--tx2)">R1 submitted ${fmtDt(h.r1At)}</span></div>
+          <span style="font-size:11px;color:var(--tx2)">${Object.keys(h.recountData).length} product(s) recounted</span></div>
         <div style="display:flex;gap:5px;">
           <button class="btn bxs bsc" onclick="showHistDetail('${h.id}')">View</button>
-          <button class="btn bxs bok" onclick="approveR2('${h.id}')">Approve R2</button>
         </div>
       </div>`).join('');
   } catch(e){}
@@ -1444,8 +1530,8 @@ async function renderHist() {
       el.innerHTML='<div style="text-align:center;padding:30px;color:var(--tx2)"><div style="font-size:36px;margin-bottom:8px">📂</div><b>No Records</b><p style="font-size:12px;margin-top:4px">No PI history for this filter</p></div>';
       return;
     }
-    const sm={none:'cgr',r1_done:'cyl',r2_approved:'cbl',r2_done:'cpr'};
-    const sl={none:'Submitted',r1_done:'R1 Done',r2_approved:'R2 Approved',r2_done:'Complete'};
+    const sm={none:'cgr',done:'cpr'};
+    const sl={none:'Submitted',done:'Recounted'};
     el.innerHTML=recs.map((h,i)=>{
       const s=h.summary||{}, rc=h.recountStatus||'none';
       return `<div class="li" onclick="showHistDetail('${h.id}')">
@@ -1480,18 +1566,25 @@ async function showHistDetail(id) {
         <td class="${r.varVal>0?'vp':r.varVal<0?'vn':'vz'}">₹${(r.varVal||0).toFixed(0)}</td></tr>`).join('')}
       </tbody></table></div>`;
     else html+='<div class="info igr">✅ No variance items</div>';
-    ['r1','r2'].forEach(k=>{
-      if(h[`${k}Data`]){
-        const photos=Object.values(h[`${k}Data`]);
-        html+=`<div class="dvd"></div><div class="cttl">📷 Recount ${k==='r1'?1:2} Photos</div>
-          <div class="pgrid">${photos.map(it=>`<div class="pthumb">
-            <img src="${it.photoURL||it.photoBase64||''}" onclick="viewPhoto('${it.photoURL||it.photoBase64||''}','${esc(it.code)}')">
-            <div class="pc">${esc(it.code)} · Qty ${it.qty}</div>
-          </div>`).join('')}</div>`;
+    if (isAdmin) {
+      const withScans=(h.result||[]).filter(r=>r.scanBy&&r.scanBy.length);
+      if (withScans.length) {
+        html+=`<div class="dvd"></div><div class="cttl">👥 Scan Count by Each User (Multi-User Merge)</div>
+        <div class="tbw"><table>
+          <thead><tr><th>Code</th><th>Total Qty</th><th>Store</th><th>Scan Breakdown</th></tr></thead>
+          <tbody>${withScans.map(r=>`<tr><td class="tdc">${esc(r.code)}</td><td>${r.physQty}</td><td>${esc(h.store)}</td>
+            <td>${r.scanBy.map(sb=>`${esc(sb.userName)}: ${sb.count}`).join(' · ')}</td></tr>`).join('')}
+          </tbody></table></div>`;
       }
-    });
-    if (isAdmin&&h.recountStatus==='r1_done')
-      html+=`<div class="dvd"></div><button class="btn bok bfl" onclick="approveR2('${h.id}');closeO('histOvl')">✅ Approve Recount 2</button>`;
+    }
+    if (h.recountData && Object.keys(h.recountData).length) {
+      const photos=Object.values(h.recountData);
+      html+=`<div class="dvd"></div><div class="cttl">📷 Recount Proof (One per Product · Locked)</div>
+        <div class="pgrid">${photos.map(it=>`<div class="pthumb">
+          <img src="${it.photoURL||it.photoBase64||''}" onclick="viewPhoto('${it.photoURL||it.photoBase64||''}','${esc(it.code)}')">
+          <div class="pc">${esc(it.code)} · Final Qty ${it.finalQty}<br><span style="font-size:10px;color:var(--tx2)">${esc(it.userName)} · ${fmtDt(it.timestamp)}</span></div>
+        </div>`).join('')}</div>`;
+    }
     if (isAdmin)
       html+=`<div class="dvd"></div><button class="btn bdn bsm" onclick="delHistRec('${h.id}')">🗑 Delete Record</button>`;
     $('histOvlTitle').textContent=`${h.store} · ${h.week}`;
@@ -1554,7 +1647,7 @@ async function renderStoreDash() {
     $('s1').textContent=A.piAssign?.stores?.includes(A.user.store)?'✓':'—';
     $('s2').textContent=lat?.summary?.total||0;
     $('s3').textContent=lat?.summary?.totalVar||0;
-    $('s4').textContent=recs.filter(r=>r.recountStatus==='r1_done'&&r.week===A.piWeek).length;
+    $('s4').textContent=recs.filter(r=>r.recountStatus==='done'&&r.week===A.piWeek).length;
     $('s5').textContent=recs.length;
     $('s6').textContent=lat?'Submitted':'Pending';
   } catch(e){}
@@ -1571,8 +1664,9 @@ async function renderAdminDash() {
     const wv=tw.length?(tw.reduce((s,h)=>{const t=h.summary?.total||0,v=h.summary?.totalVar||0;return t>0?s+(v/t)*100:s;},0)/tw.length).toFixed(1)+'%':'—';
     const mv=tm.length?(tm.reduce((s,h)=>{const t=h.summary?.total||0,v=h.summary?.totalVar||0;return t>0?s+(v/t)*100:s;},0)/tm.length).toFixed(1)+'%':'—';
     $('a3').textContent=wv; $('a4').textContent=mv;
-    const rc=all.filter(h=>h.recountStatus==='r1_done').length;
-    $('a5').textContent=rc; $('a6').textContent=rc;
+    const withRc=all.filter(h=>h.recountData&&Object.keys(h.recountData).length);
+    const totalLockedProducts=withRc.reduce((s,h)=>s+Object.keys(h.recountData).length,0);
+    $('a5').textContent=withRc.length; $('a6').textContent=totalLockedProducts;
     const sv={};
     tw.forEach(h=>{const p=parseFloat(h.summary?.varPct||0);if(!sv[h.store]||p>sv[h.store])sv[h.store]=p;});
     const sorted=Object.entries(sv).sort((a,b)=>b[1]-a[1]);
@@ -1595,6 +1689,7 @@ async function renderAdminDash() {
 function openAssignPI() {
   const w=$('aWeek')?.value||A.piWeek;
   $('assignWk').value=w;
+  $('assignHdrTitle').value='';
   $('assignSts').innerHTML=STORES.map(s=>`
     <label style="display:flex;align-items:center;gap:8px;padding:7px 11px;background:var(--sf2);border-radius:6px;cursor:pointer;">
       <input type="checkbox" value="${s}" style="accent-color:var(--ac)"> ${s}
@@ -1604,9 +1699,10 @@ function openAssignPI() {
 
 async function doAssignPI() {
   const week=$('assignWk').value; if(!week){toast('Select a week','err');return;}
+  const headerTitle=$('assignHdrTitle').value.trim();
   const stores=Array.from(document.querySelectorAll('#assignSts input:checked')).map(c=>c.value);
   if(!stores.length){toast('Select at least one store','err');return;}
-  const obj={week,stores,assignedAt:new Date().toISOString(),assignedBy:A.user.name||A.user.username};
+  const obj={week,stores,headerTitle,assignedAt:new Date().toISOString(),assignedBy:A.user.name||A.user.username};
   try {
     await db.ref('pi_assignments/'+week).set(obj);
     toast(`✅ PI assigned to: ${stores.join(', ')}`,'ok');
@@ -1723,15 +1819,17 @@ function openCam(mode) {
   if (A.qrScanner){A.qrScanner.stop().catch(()=>{});A.qrScanner=null;}
   $('qr-reader').innerHTML='';
   A.qrScanner=new Html5Qrcode('qr-reader');
+  // Performance: higher fps for faster detection, continuous autofocus via advanced video constraints,
+  // smaller initial qrbox so the camera opens and locks focus faster on typical barcode widths.
   A.qrScanner.start(
-    {facingMode:A.camFace},
-    {fps:10,qrbox:{width:240,height:100}},
+    {facingMode:A.camFace, advanced:[{focusMode:'continuous'}]},
+    {fps:20, qrbox:{width:260, height:120}, aspectRatio:1.777, disableFlip:false},
     code=>{
       stopCam();
       const c=code.trim().toUpperCase();
-      if (A.camMode==='pi'){$('piCode').value=c;lookupCode();goSec('pi',null);}
-      else {$('sohQ').value=c;renderSOH();goSec('soh',null);}
-      toast(`✅ Scanned: ${c}`,'ok');
+      if (A.camMode==='pi'){
+        $('piCode').value=c; goSec('pi',null); scanSubmit(); // auto-submit immediately after successful read
+      } else {$('sohQ').value=c;renderSOH();goSec('soh',null);}
     },()=>{}
   ).catch(e=>{toast('Camera error: '+e,'err');closeO('camOvl');});
 }
