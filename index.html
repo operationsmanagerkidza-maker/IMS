@@ -1510,8 +1510,8 @@ function todayStr(d=new Date()) {
 async function initChecklist(kind) {
   const isAdmin = A.user?.role==='admin';
   const today = todayStr();
-  $(kind+'WBg').textContent = today;
-  const bodyEl = $(kind+'Body');
+  $(kind==='opening'?'openWBg':'closeWBg').textContent = today;
+  const bodyEl = $(kind==='opening'?'openBody':'closeBody');
 
   if (isAdmin) {
     // Admin sees today's submissions across all stores, with amber alerts surfaced first.
@@ -1595,7 +1595,7 @@ async function viewChecklistDetail(kind, store, date) {
 
 function renderChecklistForm(kind, existing) {
   const cfg = CHECKLISTS[kind];
-  const bodyEl = $(kind+'Body');
+  const bodyEl = $(kind==='opening'?'openBody':'closeBody');
   const locked = !!existing;
 
   const questionsHTML = cfg.questions.map((q,i) => {
